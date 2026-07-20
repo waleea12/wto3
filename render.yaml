@@ -1,11 +1,9 @@
-services:
-  # 1. قاعدة البيانات (PostgreSQL)
-  - type: pserv
-    name: wto3-db
-    env: postgres
+databases:
+  - name: wto3-db
     plan: free
 
-  # 2. السيرفر (Socket.io Backend)
+services:
+  # السيرفر (Socket.io Backend)
   - type: web
     name: wto3-server
     env: node
@@ -18,7 +16,7 @@ services:
           name: wto3-db
           property: connectionString
 
-  # 3. الواجهة (Next.js Frontend)
+  # الواجهة (Next.js Frontend)
   - type: web
     name: wto3
     env: node
@@ -40,7 +38,7 @@ services:
           type: web
           name: wto3
           envVarKey: RENDER_EXTERNAL_URL
-      # المتغيرات الخاصة بك التي ستضيفها يدوياً في لوحة تحكم Render:
+      # المتغيرات السرية
       - key: NEXT_PUBLIC_YOUTUBE_API_KEY
         sync: false
       - key: GOOGLE_CLIENT_ID
