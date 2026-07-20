@@ -11,10 +11,28 @@ services:
     buildCommand: npm install -g pnpm && pnpm install && pnpm --filter database db:generate && pnpm --filter database db:push && pnpm --filter server build
     startCommand: pnpm --filter server start
     envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: PNPM_VERSION
+        value: "9"
       - key: DATABASE_URL
         fromDatabase:
           name: wto3-db
           property: connectionString
+      - key: ALLOWED_ORIGINS
+        fromService:
+          type: web
+          name: wto3
+          envVarKey: RENDER_EXTERNAL_URL
+      # المتغيرات السرية للسيرفر (سيطلبها منك ريندر)
+      - key: JWT_SECRET
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
 
   # الواجهة (Next.js Frontend)
   - type: web
@@ -24,6 +42,10 @@ services:
     buildCommand: npm install -g pnpm && pnpm install && pnpm --filter database db:generate && pnpm --filter web build
     startCommand: pnpm --filter web start
     envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: PNPM_VERSION
+        value: "9"
       - key: NEXT_PUBLIC_SERVER_URL
         fromService:
           type: web
@@ -38,7 +60,7 @@ services:
           type: web
           name: wto3
           envVarKey: RENDER_EXTERNAL_URL
-      # المتغيرات السرية
+      # المتغيرات السرية للواجهة (سيطلبها منك ريندر)
       - key: NEXT_PUBLIC_YOUTUBE_API_KEY
         sync: false
       - key: GOOGLE_CLIENT_ID
