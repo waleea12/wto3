@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "strict": true,
+    "rootDir": "../..",
+    "outDir": "./dist",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@watch-party/types": ["../../packages/types/src"],
+      "@watch-party/database": ["../../packages/database/src"]
+    }
+  },
+  "include": ["src", "../../packages/types/src", "../../packages/database/src"],
+  "exclude": ["node_modules", "dist"]
+}
