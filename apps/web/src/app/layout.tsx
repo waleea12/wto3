@@ -1,19 +1,29 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Playfair_Display, Source_Sans_3 } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 
-const inter = Inter({ subsets: ['latin'] })
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-playfair',
+  weight: ['400', '500', '600', '700'],
+})
+
+const sourceSans = Source_Sans_3({
+  subsets: ['latin'],
+  variable: '--font-source-sans',
+  weight: ['300', '400', '500', '600', '700'],
+})
 
 export const metadata: Metadata = {
-  title: 'Watch Party - Watch Together in Sync',
+  title: 'Watch Party — Watch Together in Sync',
   description: 'Watch YouTube and Google Drive videos in perfect synchronization with friends',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={`${sourceSans.variable} ${playfair.variable} ${sourceSans.className}`} suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

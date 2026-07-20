@@ -2,26 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
-    --primary: 263 70% 58%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 222.2 47.4% 11.2%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 223 47% 11%;
-    --muted-foreground: 215.4 16.3% 56.9%;
-    --accent: 216 34% 17%;
-    --accent-foreground: 210 40% 98%;
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --ring: 263.4 70% 50.4%;
-    --card: 224 71% 7%;
-    --card-foreground: 213 31% 91%;
-    --radius: 0.75rem;
+    /* Classic dark palette — deep navy / warm black */
+    --background: 220 20% 7%;
+    --foreground: 38 25% 90%;
+
+    /* Accent: warm gold */
+    --primary: 38 72% 52%;
+    --primary-foreground: 220 20% 7%;
+
+    --secondary: 220 18% 12%;
+    --secondary-foreground: 38 20% 82%;
+
+    --muted: 220 16% 14%;
+    --muted-foreground: 220 10% 52%;
+
+    --accent: 220 16% 16%;
+    --accent-foreground: 38 25% 88%;
+
+    --border: 220 14% 18%;
+    --input: 220 16% 12%;
+    --ring: 38 72% 52%;
+
+    --card: 220 18% 9%;
+    --card-foreground: 38 20% 88%;
+
+    --radius: 0.5rem;
   }
 }
 
@@ -32,131 +41,166 @@
   }
 
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Source Sans 3', system-ui, sans-serif;
     scroll-behavior: smooth;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     background-image:
-      radial-gradient(ellipse at 20% 50%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 40%);
+      radial-gradient(ellipse at 30% 0%, rgba(180, 140, 60, 0.04) 0%, transparent 55%),
+      radial-gradient(ellipse at 75% 90%, rgba(30, 40, 70, 0.35) 0%, transparent 55%);
     background-attachment: fixed;
   }
 }
 
 @layer components {
-  /* Glass effect using plain CSS (avoids @apply with arbitrary opacity) */
+  /* ── Glass ────────────────────────────────── */
   .glass {
     backdrop-filter: blur(12px);
-    background-color: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: rgba(15, 18, 28, 0.70);
+    border: 1px solid rgba(200, 170, 100, 0.10);
   }
 
   .glass-dark {
     backdrop-filter: blur(20px);
-    background-color: rgba(0, 0, 0, 0.25);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background-color: rgba(8, 10, 18, 0.80);
+    border-bottom: 1px solid rgba(200, 170, 100, 0.08);
   }
 
+  /* ── Buttons ──────────────────────────────── */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5
-           bg-violet-600 hover:bg-violet-500 text-white font-semibold
-           rounded-xl transition-all duration-200 ease-out
-           hover:-translate-y-0.5
-           active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed
-           disabled:hover:translate-y-0;
-    box-shadow: none;
+           font-semibold tracking-wide transition-all duration-200 ease-out
+           disabled:opacity-40 disabled:cursor-not-allowed;
+    background: linear-gradient(135deg, hsl(38 68% 48%), hsl(38 72% 56%));
+    color: hsl(220, 22%, 8%);
+    border: 1px solid rgba(200, 165, 80, 0.50);
+    border-radius: var(--radius);
+    letter-spacing: 0.03em;
+    font-size: 0.875rem;
   }
 
   .btn-primary:hover:not(:disabled) {
-    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3);
+    background: linear-gradient(135deg, hsl(38 72% 52%), hsl(38 76% 60%));
+    box-shadow: 0 4px 20px rgba(200, 160, 60, 0.22);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0);
   }
 
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5
-           text-white font-medium rounded-xl transition-all duration-200 ease-out
-           hover:-translate-y-0.5;
-    background-color: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+           font-medium tracking-wide transition-all duration-200 ease-out;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(200, 170, 100, 0.18);
+    color: rgba(220, 195, 140, 0.85);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
   }
 
   .btn-secondary:hover {
-    background-color: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(200, 165, 80, 0.09);
+    border-color: rgba(200, 170, 100, 0.30);
+    color: rgba(220, 200, 150, 1);
   }
 
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 px-3 py-1.5
-           font-medium rounded-lg transition-all duration-200 text-sm;
-    color: rgba(255, 255, 255, 0.55);
+           font-medium transition-all duration-200 text-sm;
+    color: rgba(200, 185, 155, 0.50);
+    border-radius: var(--radius);
   }
 
   .btn-ghost:hover {
-    color: rgba(255, 255, 255, 0.85);
-    background-color: rgba(255, 255, 255, 0.07);
+    color: rgba(220, 200, 155, 0.82);
+    background-color: rgba(200, 170, 90, 0.08);
   }
 
+  /* ── Input ────────────────────────────────── */
   .input-field {
-    @apply w-full px-4 py-2.5 rounded-xl text-white text-sm outline-none
-           transition-all duration-200;
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
+    @apply w-full px-4 py-2.5 text-sm outline-none transition-all duration-200;
+    background: rgba(10, 12, 22, 0.70);
+    border: 1px solid rgba(200, 170, 100, 0.15);
+    color: rgba(225, 210, 175, 0.90);
+    border-radius: var(--radius);
+    font-family: 'Source Sans 3', sans-serif;
   }
 
   .input-field::placeholder {
-    color: rgba(255, 255, 255, 0.28);
+    color: rgba(200, 185, 150, 0.28);
   }
 
   .input-field:focus {
-    border-color: rgba(139, 92, 246, 0.6);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+    border-color: rgba(200, 160, 60, 0.55);
+    box-shadow: 0 0 0 3px rgba(200, 155, 50, 0.10);
+    background: rgba(12, 14, 25, 0.85);
   }
 
+  /* ── Card ─────────────────────────────────── */
   .card {
-    @apply rounded-2xl overflow-hidden;
-    background-color: hsl(var(--card));
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    @apply overflow-hidden;
+    background: hsl(var(--card));
+    border: 1px solid rgba(200, 170, 100, 0.10);
+    border-radius: var(--radius);
   }
 
+  /* ── Badges ───────────────────────────────── */
   .badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold;
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold tracking-wide;
   }
 
   .badge-host {
     @apply badge;
-    background-color: rgba(139, 92, 246, 0.18);
-    color: #c4b5fd;
-    border: 1px solid rgba(139, 92, 246, 0.28);
+    background: rgba(200, 160, 60, 0.12);
+    color: hsl(38 72% 70%);
+    border: 1px solid rgba(200, 160, 60, 0.28);
   }
 
   .badge-live {
     @apply badge;
-    background-color: rgba(34, 197, 94, 0.18);
+    background: rgba(34, 197, 94, 0.12);
     color: #86efac;
-    border: 1px solid rgba(34, 197, 94, 0.28);
+    border: 1px solid rgba(34, 197, 94, 0.22);
   }
 
+  /* ── Sidebar section ──────────────────────── */
   .sidebar-section {
     @apply p-4;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(200, 170, 100, 0.07);
   }
 
+  /* ── Avatar ───────────────────────────────── */
   .avatar {
     @apply rounded-full flex items-center justify-center font-bold text-white flex-shrink-0;
-    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    background: linear-gradient(135deg, hsl(38 58% 38%), hsl(38 55% 28%));
+    color: hsl(38 30% 92%);
+  }
+
+  /* ── Decorative divider ───────────────────── */
+  .divider-gold {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(200, 160, 60, 0.22), transparent);
   }
 }
 
 @layer utilities {
-  .text-gradient {
-    background: linear-gradient(135deg, #a78bfa, #f0abfc, #818cf8);
+  /* Gold gradient text */
+  .text-gold {
+    background: linear-gradient(135deg, hsl(38 72% 60%), hsl(40 80% 72%));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
+  /* Subtle glow on gold elements */
+  .glow-gold {
+    box-shadow: 0 0 16px rgba(200, 155, 50, 0.18);
+  }
+
+  /* Scrollbar */
   .scrollbar-thin::-webkit-scrollbar {
     width: 4px;
   }
@@ -166,16 +210,16 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(200, 165, 80, 0.15);
     border-radius: 9999px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(200, 165, 80, 0.28);
   }
 }
 
-/* Global scrollbar */
+/* ── Global scrollbar ──────────────────────── */
 ::-webkit-scrollbar {
   width: 5px;
 }
@@ -183,28 +227,33 @@
   background: hsl(var(--background));
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(200, 165, 80, 0.12);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(200, 165, 80, 0.24);
 }
 
-/* Animations */
+/* ── Animations ────────────────────────────── */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulseGlow {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
+  50%       { opacity: 0.45; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 0.5s ease-out forwards;
+  animation: fadeInUp 0.45s ease-out forwards;
 }
 
 .animate-pulse-glow {
-  animation: pulseGlow 2s ease-in-out infinite;
+  animation: pulseGlow 2.2s ease-in-out infinite;
 }

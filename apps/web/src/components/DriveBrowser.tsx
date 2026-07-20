@@ -39,6 +39,17 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+const C = {
+  gold:       'rgba(210,170,80,0.88)',
+  goldFaint:  'rgba(200,165,70,0.10)',
+  goldBorder: 'rgba(200,160,60,0.20)',
+  text90:     'rgba(225,210,175,0.92)',
+  text70:     'rgba(210,195,160,0.70)',
+  text50:     'rgba(200,185,150,0.50)',
+  text30:     'rgba(200,180,135,0.30)',
+  text20:     'rgba(200,180,135,0.20)',
+}
+
 export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBrowserProps) {
   const [files, setFiles] = useState<DriveFile[]>([])
   const [loading, setLoading] = useState(true)
@@ -102,29 +113,31 @@ export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBr
   }
 
   return (
-    // Backdrop
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+      style={{ background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(6px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       {/* Modal */}
       <div
-        className="w-full max-w-xl rounded-2xl flex flex-col overflow-hidden"
+        className="w-full max-w-xl flex flex-col overflow-hidden"
         style={{
-          background: 'hsl(224 71% 6%)',
-          border: '1px solid rgba(255,255,255,0.10)',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.6)',
+          background: 'rgba(11,14,24,0.98)',
+          border: '1px solid rgba(200,170,100,0.14)',
+          borderRadius: '6px',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.75)',
           maxHeight: '80vh',
         }}
       >
+        {/* Gold top accent */}
+        <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, rgba(200,160,60,0.50), transparent)', flexShrink: 0 }} />
+
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg,#1a73e8,#0d47a1)' }}>
-            {/* Drive icon */}
-            <svg width="16" height="16" viewBox="0 0 87.3 78" fill="none">
+        <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0"
+          style={{ borderBottom: '1px solid rgba(200,170,100,0.08)' }}>
+          <div className="w-8 h-8 flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(26,115,232,0.12)', border: '1px solid rgba(26,115,232,0.22)', borderRadius: '4px' }}>
+            <svg width="15" height="15" viewBox="0 0 87.3 78" fill="none">
               <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0a15.4 15.4 0 0 0 2.1 7.85l4.5-6z" fill="#0066da" transform="scale(0.8)"/>
               <path d="M43.65 25L29.9 1.2a15.4 15.4 0 0 0-3.3 3.3L2.1 45.5A15.35 15.35 0 0 0 0 53.0h27.5L43.65 25z" fill="#00ac47" transform="scale(0.8)"/>
               <path d="M73.55 76.8a15.4 15.4 0 0 0 3.3-3.3l1.6-2.75 7.65-13.25a15.35 15.35 0 0 0 2.1-7.85H60.7l5.85 11.5 7 15.65z" fill="#ea4335" transform="scale(0.8)"/>
@@ -134,25 +147,25 @@ export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBr
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-white font-bold text-sm">Google Drive</h2>
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.40)' }}>Select a video to play</p>
+            <h2 className="font-semibold text-sm" style={{ color: C.text90, fontFamily: 'var(--font-playfair)' }}>Google Drive</h2>
+            <p className="text-xs" style={{ color: C.text30 }}>Select a video to play</p>
           </div>
           <button onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
-            style={{ color: 'rgba(255,255,255,0.40)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+            className="w-7 h-7 flex items-center justify-center transition-colors"
+            style={{ color: C.text50, borderRadius: '4px' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
         </div>
 
         {/* Search */}
-        <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="px-4 py-3 flex-shrink-0" style={{ borderBottom: '1px solid rgba(200,170,100,0.06)' }}>
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.30)" strokeWidth="2"
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.text30} strokeWidth="2"
                 className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
@@ -172,27 +185,27 @@ export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBr
         <div className="flex-1 overflow-y-auto scrollbar-thin">
           {loading && files.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <svg className="animate-spin w-6 h-6" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="rgba(139,92,246,0.5)" strokeWidth="3"/>
-                <path className="opacity-75" fill="#7c3aed" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-20" cx="12" cy="12" r="10" stroke={C.gold} strokeWidth="3"/>
+                <path className="opacity-75" fill={C.gold} d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
               </svg>
-              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.40)' }}>Loading your Drive videos...</p>
+              <p className="text-sm" style={{ color: C.text30 }}>Loading your Drive videos...</p>
             </div>
           )}
 
           {error && (
-            <div className="m-4 p-4 rounded-xl text-sm text-red-300"
-              style={{ background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.25)' }}>
+            <div className="m-4 p-3 text-sm"
+              style={{ background: 'rgba(200,60,60,0.08)', border: '1px solid rgba(200,60,60,0.22)', borderRadius: '4px', color: 'rgba(230,160,155,0.90)' }}>
               ⚠️ {error}
             </div>
           )}
 
           {!loading && !error && files.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(200,170,100,0.12)" strokeWidth="1.5">
                 <polygon points="5 3 19 12 5 21 5 3"/>
               </svg>
-              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <p className="text-sm" style={{ color: C.text30 }}>
                 {search ? 'No videos found for your search' : 'No videos found in your Drive'}
               </p>
             </div>
@@ -206,22 +219,23 @@ export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBr
                   key={file.id}
                   onClick={() => setSelected(file)}
                   onDoubleClick={() => { setSelected(file); setTimeout(handleConfirm, 50) }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 text-left"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all duration-150"
                   style={{
-                    background: isSelected ? 'rgba(124,58,237,0.20)' : 'transparent',
-                    border: isSelected ? '1px solid rgba(124,58,237,0.40)' : '1px solid transparent',
+                    background: isSelected ? C.goldFaint : 'transparent',
+                    border: isSelected ? '1px solid ' + C.goldBorder : '1px solid transparent',
+                    borderRadius: '4px',
                   }}
-                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
                   onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
                 >
                   {/* Thumbnail or icon */}
-                  <div className="w-12 h-9 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center"
-                    style={{ background: 'rgba(255,255,255,0.06)' }}>
+                  <div className="w-12 h-9 flex-shrink-0 flex items-center justify-center overflow-hidden"
+                    style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '3px' }}>
                     {file.thumbnailLink ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={file.thumbnailLink} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.30)" strokeWidth="1.5">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.text30} strokeWidth="1.5">
                         <polygon points="5 3 19 12 5 21 5 3"/>
                       </svg>
                     )}
@@ -229,17 +243,17 @@ export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBr
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: isSelected ? '#c4b5fd' : 'rgba(255,255,255,0.85)' }}>
+                    <p className="text-sm font-medium truncate" style={{ color: isSelected ? C.gold : C.text90 }}>
                       {file.name}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    <p className="text-xs mt-0.5" style={{ color: C.text30 }}>
                       {formatDate(file.modifiedTime)}{file.size ? ` · ${formatSize(file.size)}` : ''}
                     </p>
                   </div>
 
-                  {/* Selected check */}
+                  {/* Check */}
                   {isSelected && (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2.5" className="flex-shrink-0">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="2.5" className="flex-shrink-0">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                   )}
@@ -254,8 +268,8 @@ export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBr
               <button
                 onClick={() => fetchFiles(pageToken ?? undefined)}
                 disabled={loading}
-                className="w-full py-2 text-sm rounded-xl transition-all"
-                style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                className="w-full py-2 text-sm transition-all"
+                style={{ background: 'rgba(255,255,255,0.04)', color: C.text50, border: '1px solid rgba(200,170,100,0.08)', borderRadius: '4px' }}>
                 {loading ? 'Loading...' : 'Load more'}
               </button>
             </div>
@@ -263,14 +277,14 @@ export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBr
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-3 gap-3"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="flex items-center justify-between px-4 py-3 gap-3 flex-shrink-0"
+          style={{ borderTop: '1px solid rgba(200,170,100,0.08)' }}>
           {selected ? (
-            <p className="text-xs flex-1 truncate" style={{ color: 'rgba(255,255,255,0.50)' }}>
-              Selected: <span style={{ color: 'rgba(196,181,253,0.90)' }}>{selected.name}</span>
+            <p className="text-xs flex-1 truncate" style={{ color: C.text30 }}>
+              Selected: <span style={{ color: C.gold }}>{selected.name}</span>
             </p>
           ) : (
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.30)' }}>Double-click to play instantly</p>
+            <p className="text-xs" style={{ color: C.text20 }}>Double-click to play instantly</p>
           )}
           <div className="flex gap-2 flex-shrink-0">
             <button onClick={onClose} className="btn-ghost text-sm px-4 py-2">Cancel</button>
@@ -279,7 +293,7 @@ export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBr
               disabled={!selected}
               className="btn-primary px-4 py-2 text-sm"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polygon points="5 3 19 12 5 21 5 3"/>
               </svg>
               Play Video
