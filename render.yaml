@@ -9,7 +9,7 @@ services:
     env: node
     plan: free
     buildCommand: npm install -g pnpm && pnpm install && pnpm --filter database db:generate && pnpm --filter server build
-    startCommand: pnpm --filter database db:push && pnpm --filter server start
+    startCommand: pnpm --filter server start
     envVars:
       - key: NODE_VERSION
         value: "20"
