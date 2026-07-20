@@ -335,10 +335,18 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
     const state = roomStates.get(roomSlug)
     if (!state || state.isPlaying === false) return
 
+    // Host is the source of truth; never correct the host.
+    // Instead, silently align the server's estimated time with the host's actual time.
+    if (isHost(socket, roomSlug)) {
+      state.currentTime = payload.currentTime
+      state.serverTimestamp = Date.now()
+      return
+    }
+
     const expectedTime = computeCurrentTime(state)
     const drift = Math.abs(payload.currentTime - expectedTime)
 
-    const DRIFT_THRESHOLD_AUTO_SEEK = 0.5
+    const DRIFT_THRESHOLD_AUTO_SEEK = 1.5
     if (drift > DRIFT_THRESHOLD_AUTO_SEEK) {
       socket.emit('sync_state', {
         currentVideo: state.currentVideo,
