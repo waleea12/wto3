@@ -8,8 +8,8 @@ services:
     name: wto3-server
     env: node
     plan: free
-    buildCommand: npm install -g pnpm && pnpm install && pnpm --filter database db:generate && pnpm --filter database db:push && pnpm --filter server build
-    startCommand: pnpm --filter server start
+    buildCommand: npm install -g pnpm && pnpm install && pnpm --filter database db:generate && pnpm --filter server build
+    startCommand: pnpm --filter database db:push && pnpm --filter server start
     envVars:
       - key: NODE_VERSION
         value: "20"
@@ -40,6 +40,7 @@ services:
     env: node
     plan: free
     buildCommand: npm install -g pnpm && pnpm install && pnpm --filter database db:generate && pnpm --filter web build
+
     startCommand: pnpm --filter web start
     envVars:
       - key: NODE_VERSION
