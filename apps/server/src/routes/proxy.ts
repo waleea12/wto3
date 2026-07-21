@@ -34,7 +34,7 @@ proxyRouter.get('/', async (req: Request, res: Response) => {
     
     // Forward the content type (very important for m3u8/ts)
     if (response.headers['content-type']) {
-      res.setHeader('Content-Type', response.headers['content-type'])
+      res.setHeader('Content-Type', String(response.headers['content-type']))
     }
     
     // In a real robust proxy for HLS, we would need to rewrite the .m3u8 
