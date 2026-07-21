@@ -562,15 +562,62 @@ export default function RoomPage() {
   }, [room?.currentVideo, room?.currentSource])
 
   useEffect(() => {
-    function onFsChange() { setIsFullscreen(!!document.fullscreenElement) }
+    function onFsChange() {
+      setIsFullscreen(
+        !!document.fullscreenElement ||
+        !!(document as any).webkitFullscreenElement
+      )
+    }
     document.addEventListener('fullscreenchange', onFsChange)
-    return () => document.removeEventListener('fullscreenchange', onFsChange)
+    document.addEventListener('webkitfullscreenchange', onFsChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', onFsChange)
+      document.removeEventListener('webkitfullscreenchange', onFsChange)
+    }
   }, [])
 
   function toggleFullscreen() {
-    if (!videoContainerRef.current) return
-    if (!document.fullscreenElement) videoContainerRef.current.requestFullscreen()
-    else document.exitFullscreen()
+    const isFs =
+      !!document.fullscreenElement ||
+      !!(document as any).webkitFullscreenElement
+
+    if (!isFs) {
+      // On iOS Safari, requestFullscreen on a div doesn't work.
+      // For Drive (video element), use the video's native fullscreen.
+      // For YouTube (iframe), try container then iframe.
+      const vid = videoRef.current
+      const container = videoContainerRef.current
+      const iframe = playerRef.current
+
+      if (room?.currentSource === 'drive' && vid) {
+        // Native video fullscreen (works on all mobile browsers)
+        if (vid.requestFullscreen) {
+          vid.requestFullscreen().catch(() => {})
+        } else if ((vid as any).webkitEnterFullscreen) {
+          // iOS Safari native video fullscreen
+          ;(vid as any).webkitEnterFullscreen()
+        } else if ((vid as any).webkitRequestFullscreen) {
+          ;(vid as any).webkitRequestFullscreen()
+        }
+      } else if (container) {
+        // YouTube: try container fullscreen
+        if (container.requestFullscreen) {
+          container.requestFullscreen().catch(() => {
+            // Fallback: try iframe
+            if (iframe?.requestFullscreen) iframe.requestFullscreen().catch(() => {})
+            else if ((iframe as any)?.webkitRequestFullscreen) (iframe as any).webkitRequestFullscreen()
+          })
+        } else if ((container as any).webkitRequestFullscreen) {
+          ;(container as any).webkitRequestFullscreen()
+        }
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {})
+      } else if ((document as any).webkitExitFullscreen) {
+        ;(document as any).webkitExitFullscreen()
+      }
+    }
   }
 
   function handleYouTubePlay(id: string, title: string, thumbnail: string) {
