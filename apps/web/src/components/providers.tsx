@@ -16,7 +16,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   if (!mounted) return null
 
   return (
-    <SessionProvider>
+    <SessionProvider
+      refetchInterval={5 * 60}
+      refetchOnWindowFocus={true}
+      refetchWhenOffline={false}
+    >
       <QueryClientProvider client={queryClient}>
         {children}
       </QueryClientProvider>

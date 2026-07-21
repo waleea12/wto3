@@ -714,8 +714,33 @@ export default function RoomPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.currentVideo, room?.currentSource])
 
+  // Keyboard visibility tracking for mobile
+  const chatInputRef = useRef<HTMLInputElement>(null)
+
+  const handleChatInputFocus = useCallback(() => {
+    // On mobile, when the chat input is focused, ensure the video stays visible
+    // by using a small delay to let the keyboard open first
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      // Scroll the video container into view without moving it
+      const videoContainer = document.querySelector('[data-video-container]')
+      if (videoContainer) {
+        videoContainer.scrollIntoView({ block: 'start', behavior: 'smooth' })
+      }
+    }
+  }, [])
+
+  const handleChatInputBlur = useCallback(() => {
+    // When chat input loses focus, scroll back to video
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      const videoContainer = document.querySelector('[data-video-container]')
+      if (videoContainer) {
+        videoContainer.scrollIntoView({ block: 'start', behavior: 'smooth' })
+      }
+    }
+  }, [])
+
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] bg-background overflow-hidden relative">
+    <div className="room-layout flex flex-col md:flex-row h-[100dvh] bg-background overflow-hidden relative">
 
       {/* ── Main area (desktop: flex-col flex-1; mobile: just video+controls) ── */}
       <div className="flex flex-col min-w-0 flex-1 md:flex-1 min-h-0">
@@ -939,10 +964,17 @@ export default function RoomPage() {
                 )}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-3 flex-shrink-0" style={{ borderTop: '1px solid rgba(200,170,100,0.07)' }}>
+              <div className="p-3 flex-shrink-0 chat-input-area" style={{ borderTop: '1px solid rgba(200,170,100,0.07)' }}>
                 <form onSubmit={sendMessage} className="flex gap-2">
-                  <input id="chat-input-mobile" value={chatInput} onChange={(e) => onTyping(e.target.value)}
-                    placeholder="Send a message..." className="input-field flex-1 py-2" />
+                  <input 
+                    id="chat-input-mobile" 
+                    value={chatInput} 
+                    onChange={(e) => onTyping(e.target.value)}
+                    onFocus={handleChatInputFocus}
+                    onBlur={handleChatInputBlur}
+                    placeholder="Send a message..." 
+                    className="input-field flex-1 py-2" 
+                  />
                   <button id="send-message-btn-mobile" type="submit" disabled={!chatInput.trim()}
                     className="w-9 h-9 flex items-center justify-center transition-all duration-200 flex-shrink-0 disabled:opacity-35"
                     style={{ background: 'linear-gradient(135deg, hsl(38 62% 42%), hsl(38 66% 50%))', borderRadius: '4px' }}>

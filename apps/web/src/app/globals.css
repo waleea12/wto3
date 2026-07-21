@@ -275,3 +275,31 @@
     flex-basis: auto;
   }
 }
+
+/* ── Mobile keyboard fix ─────────────────────────────────────────────────── */
+/* Prevent the layout from collapsing when the virtual keyboard opens */
+/* Use position: fixed on the main container to keep video pinned at top */
+.mobile-keyboard-fix {
+  /* Prevent iOS Safari from auto-scrolling to the focused input */
+  overflow-anchor: none;
+}
+
+/* On mobile, keep the video area from shrinking when keyboard opens */
+@media (max-width: 767px) {
+  /* Use a stable viewport height that doesn't change with keyboard */
+  .room-layout {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Prevent the chat input from pushing the viewport */
+  .chat-input-area {
+    /* Use visualViewport API via JS to handle keyboard */
+    touch-action: manipulation;
+  }
+}

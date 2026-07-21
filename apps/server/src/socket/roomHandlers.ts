@@ -210,7 +210,7 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
     state.currentVideo = payload.videoId
     state.currentSource = payload.source
     state.currentTime = 0
-    state.isPlaying = false
+    state.isPlaying = true
     state.serverTimestamp = Date.now()
     const tokenToUse = payload.driveToken || (socket.data as any).driveToken
     if (tokenToUse) {
