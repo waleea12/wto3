@@ -893,9 +893,8 @@ export default function RoomPage() {
             ))}
           </div>
 
-          {sidebarTab === 'chat' && (
-            <>
-              <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">
+          <div className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin" style={{ minHeight: 0 }}>
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center space-y-2 py-6">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(200,170,100,0.10)" strokeWidth="1.5">
@@ -952,8 +951,7 @@ export default function RoomPage() {
                   </button>
                 </form>
               </div>
-            </>
-          )}
+            </div>
 
           {sidebarTab === 'queue' && (
             <div className="flex-1 overflow-y-auto p-3 scrollbar-thin">
@@ -1028,8 +1026,8 @@ export default function RoomPage() {
 
         {/* Chat panel */}
         {sidebarTab === 'chat' && (
-          <>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin">
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin" style={{ minHeight: 0 }}>
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-2 py-8">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(200,170,100,0.10)" strokeWidth="1.5">
@@ -1086,7 +1084,7 @@ export default function RoomPage() {
                 </button>
               </form>
             </div>
-          </>
+          </div>
         )}
 
         {/* Queue panel */}
