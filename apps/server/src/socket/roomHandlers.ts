@@ -390,21 +390,24 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
       userAvatar: socket.data.userAvatar,
     })
 
-    const socketsInRoom = await io.in(roomSlug).fetchSockets()
-    if (socketsInRoom.length === 0) {
-      const state = roomStates.get(roomSlug)
-      if (state) {
-        await prisma.room.update({
-          where: { slug: roomSlug },
-          data: {
-            currentTime: computeCurrentTime(state),
-            isPlaying: false,
-          },
-        })
-        roomStates.delete(roomSlug)
-        roomQueues.delete(roomSlug)
+    // Wait 5 seconds before checking if the room is empty to allow for page refreshes
+    setTimeout(async () => {
+      const socketsInRoom = await io.in(roomSlug).fetchSockets()
+      if (socketsInRoom.length === 0) {
+        const state = roomStates.get(roomSlug)
+        if (state) {
+          await prisma.room.update({
+            where: { slug: roomSlug },
+            data: {
+              currentTime: computeCurrentTime(state),
+              isPlaying: false,
+            },
+          })
+          // We no longer delete the state and queue immediately so they persist
+          state.isPlaying = false
+        }
       }
-    }
+    }, 5000)
   })
 }
 
