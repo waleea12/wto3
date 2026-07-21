@@ -5,10 +5,12 @@ import { useParams, useRouter } from 'next/navigation'
 import { useSocketStore } from '@/store/socketStore'
 import axios from 'axios'
 import DriveBrowser from '@/components/DriveBrowser'
+// MovieLibrary removed
+
 
 const SERVER = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:4000'
 
-type VideoSource = 'youtube' | 'drive' | null
+type VideoSource = 'youtube' | 'drive' | 'movie' | null
 
 interface RoomState {
   isHost: boolean
@@ -399,6 +401,7 @@ export default function RoomPage() {
   const [showChat, setShowChat] = useState(false)
   const [sidebarTab, setSidebarTab] = useState<'chat' | 'queue'>('chat')
 
+
   const playerRef = useRef<HTMLIFrameElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
@@ -529,8 +532,15 @@ export default function RoomPage() {
       .then(({ data }) => setParticipants(data.participants ?? []))
       .catch(() => router.push('/'))
     axios.get(`${SERVER}/api/rooms/${slug}/messages`, { headers })
-      .then(({ data }) => { setMessages(data); setTimeout(() => chatEndRef.current?.scrollIntoView(), 100) })
+      .then(({ data }) => { setMessages(data); setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 150) })
   }, [slug, session, router])
+
+  // Auto-scroll to bottom whenever messages change or tab switches to chat
+  useEffect(() => {
+    if (sidebarTab === 'chat') {
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
+    }
+  }, [messages, sidebarTab])
 
   useEffect(() => {
     if (!socket || !connected) return
@@ -542,7 +552,7 @@ export default function RoomPage() {
       socket.emit('heartbeat', { currentTime, buffered: 0, latency: 0 })
     }, 5000)
     return () => { if (heartbeatInterval.current) clearInterval(heartbeatInterval.current) }
-  }, [socket, connected])
+  }, [socket, connected, room?.currentTime])
 
   useEffect(() => {
     if (!room || !videoRef.current || room.currentSource !== 'drive') return
@@ -625,6 +635,8 @@ export default function RoomPage() {
     setShowYouTubeModal(false)
   }
 
+
+
   const handleYouTubeQueue = useCallback((id: string, title: string, thumbnail: string) => {
     if (!session) return
     const item: QueueItem = {
@@ -680,13 +692,25 @@ export default function RoomPage() {
     setTimeout(() => setCopyMsg(''), 2000)
   }
 
-  const handlePlay = () => { if (!room?.isHost || !videoRef.current) return; socket?.emit('play', { currentTime: videoRef.current.currentTime, serverTimestamp: Date.now() }) }
-  const handlePause = () => { if (!room?.isHost || !videoRef.current) return; socket?.emit('pause', { currentTime: videoRef.current.currentTime, serverTimestamp: Date.now() }) }
-  const handleSeeked = () => { if (!room?.isHost || !videoRef.current) return; socket?.emit('seek', { currentTime: videoRef.current.currentTime, serverTimestamp: Date.now() }) }
+  const handlePlay = (eOrTime?: number | React.SyntheticEvent<any>) => { 
+    if (!room?.isHost) return; 
+    const time = typeof eOrTime === 'number' ? eOrTime : videoRef.current?.currentTime ?? 0;
+    socket?.emit('play', { currentTime: time, serverTimestamp: Date.now() }) 
+  }
+  const handlePause = (eOrTime?: number | React.SyntheticEvent<any>) => { 
+    if (!room?.isHost) return; 
+    const time = typeof eOrTime === 'number' ? eOrTime : videoRef.current?.currentTime ?? 0;
+    socket?.emit('pause', { currentTime: time, serverTimestamp: Date.now() }) 
+  }
+  const handleSeeked = (eOrTime?: number | React.SyntheticEvent<any>) => { 
+    if (!room?.isHost) return; 
+    const time = typeof eOrTime === 'number' ? eOrTime : videoRef.current?.currentTime ?? 0;
+    socket?.emit('seek', { currentTime: time, serverTimestamp: Date.now() }) 
+  }
 
   const stableYoutubeUrl = useMemo(() => {
     if (!room?.currentVideo || room.currentSource !== 'youtube') return ''
-    return `https://www.youtube.com/embed/${room.currentVideo}?enablejsapi=1&start=${Math.floor(room.currentTime || 0)}&autoplay=1`
+    return `https://www.youtube.com/embed/${room.currentVideo}?enablejsapi=1&start=${Math.floor(room.currentTime || 0)}&autoplay=1&playsinline=1`
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.currentVideo, room?.currentSource])
 
@@ -795,9 +819,10 @@ export default function RoomPage() {
             <video key={room.currentVideo} ref={videoRef}
               src={`${SERVER}/api/rooms/${slug}/stream`}
               controls={!!room.isHost} className={`w-full h-full ${!room.isHost ? 'pointer-events-none' : ''}`}
+              playsInline
               onPlay={handlePlay} onPause={handlePause} onSeeked={handleSeeked} />
           )}
-          {/* Fullscreen button — always visible on mobile, hover-reveal on desktop */}
+          {/* Fullscreen button */}
           <button onClick={toggleFullscreen} title={isFullscreen ? 'تصغير' : 'تكبير'}
             className="absolute bottom-3 right-3 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-200 z-20"
             style={{ background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(200,170,100,0.22)', color: C.text70, backdropFilter: 'blur(8px)', borderRadius: '6px', pointerEvents: 'auto' }}>

@@ -89,6 +89,7 @@ export interface ChangeVideoPayload {
   source: VideoSource
   title?: string
   driveToken?: string
+  mediaType?: 'movie' | 'tv'
 }
 
 export interface JoinRoomPayload {

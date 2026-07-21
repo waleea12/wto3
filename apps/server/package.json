@@ -14,6 +14,7 @@
     "db:migrate": "cd ../../packages/database && npx prisma migrate dev"
   },
   "dependencies": {
+    "@consumet/extensions": "^1.8.8",
     "@watch-party/database": "workspace:*",
     "@watch-party/types": "workspace:*",
     "axios": "^1.7.0",

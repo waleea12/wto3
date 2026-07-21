@@ -1,4 +1,4 @@
-export type VideoSource = 'youtube' | 'drive'
+export type VideoSource = 'youtube' | 'drive' | 'movie'
 
 export interface Room {
   id: string

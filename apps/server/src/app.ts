@@ -5,6 +5,8 @@ import rateLimit from 'express-rate-limit'
 import { env } from './config/env'
 import { authRouter } from './routes/auth'
 import { roomRouter } from './routes/rooms'
+import { movieRouter } from './routes/movies'
+import { proxyRouter } from './routes/proxy'
 import { driveRouter } from './routes/drive'
 import { errorHandler } from './middleware/errorHandler'
 import { requestLogger } from './middleware/requestLogger'
@@ -55,6 +57,8 @@ export function createApp() {
   // API Routes
   app.use('/api/auth', authRouter)
   app.use('/api/rooms', roomRouter)
+  app.use('/api/movies', movieRouter)
+  app.use('/api/proxy', proxyRouter)
   app.use('/api/drive', driveRouter)
 
   // 404 handler

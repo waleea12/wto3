@@ -70,4 +70,6 @@ model Message {
 enum VideoSource {
   youtube
   drive
+  movie
 }
+
