@@ -29,8 +29,13 @@ const envSchema = z.object({
 function parseEnv() {
   const result = envSchema.safeParse(process.env)
   if (!result.success) {
+    const errors = result.error.flatten().fieldErrors
     console.error('❌ Invalid environment variables:')
-    console.error(result.error.flatten().fieldErrors)
+    // Log each missing/invalid field clearly
+    for (const [key, msgs] of Object.entries(errors)) {
+      console.error(`  - ${key}: ${(msgs as string[]).join(', ')}`)
+    }
+    console.error('\n📋 Current env keys present:', Object.keys(process.env).filter(k => !k.includes('npm_')).join(', '))
     process.exit(1)
   }
   return result.data
