@@ -31,7 +31,6 @@ yarn-error.log*
 # Database
 *.db
 *.sqlite
-prisma/migrations/**/migration.sql
 
 # IDE
 .idea
