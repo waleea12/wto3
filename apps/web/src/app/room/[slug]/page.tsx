@@ -715,10 +715,10 @@ export default function RoomPage() {
   }, [room?.currentVideo, room?.currentSource])
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] bg-background overflow-hidden">
+    <div className="flex flex-col md:flex-row h-[100dvh] bg-background overflow-hidden relative">
 
       {/* ── Main area (desktop: flex-col flex-1; mobile: just video+controls) ── */}
-      <div className="flex flex-col min-w-0 flex-1 md:flex-1">
+      <div className="flex flex-col min-w-0 flex-1 md:flex-1 min-h-0">
 
         {/* Header */}
         <header className="flex items-center justify-between px-4 py-3 flex-shrink-0"
@@ -877,8 +877,8 @@ export default function RoomPage() {
         )}
 
         {/* ── Mobile chat area ── */}
-        <div className="md:hidden flex flex-col flex-1 overflow-hidden"
-          style={{ background: 'rgba(8,10,20,0.97)', minHeight: 0 }}>
+        <div className="md:hidden flex flex-col flex-1 overflow-hidden min-h-0"
+          style={{ background: 'rgba(8,10,20,0.97)' }}>
           <div className="flex flex-shrink-0" style={{ borderBottom: '1px solid rgba(200,170,100,0.07)' }}>
             {(['chat', 'queue'] as const).map((t) => (
               <button key={t} onClick={() => setSidebarTab(t)}
@@ -893,7 +893,8 @@ export default function RoomPage() {
             ))}
           </div>
 
-          <div className="flex-1 flex flex-col min-h-0">
+          {sidebarTab === 'chat' && (
+            <div className="flex-1 flex flex-col min-h-0">
               <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin" style={{ minHeight: 0 }}>
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center space-y-2 py-6">
@@ -952,9 +953,10 @@ export default function RoomPage() {
                 </form>
               </div>
             </div>
+          )}
 
           {sidebarTab === 'queue' && (
-            <div className="flex-1 overflow-y-auto p-3 scrollbar-thin">
+            <div className="flex-1 overflow-y-auto p-3 scrollbar-thin min-h-0">
               <QueuePanel
                 queue={queue}
                 isHost={room?.isHost ?? false}
