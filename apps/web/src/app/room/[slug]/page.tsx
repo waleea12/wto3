@@ -646,8 +646,8 @@ export default function RoomPage() {
   return (
     <div className="flex flex-col md:flex-row h-[100dvh] bg-background overflow-hidden">
 
-      {/* ── Main area ── */}
-      <div className={`flex flex-col min-w-0 ${showChat ? 'hidden md:flex md:flex-1' : 'flex flex-1 md:flex-1'}`}>
+      {/* ── Main area (desktop: flex-col flex-1; mobile: just video+controls) ── */}
+      <div className="flex flex-col min-w-0 flex-1 md:flex-1">
 
         {/* Header */}
         <header className="flex items-center justify-between px-4 py-3 flex-shrink-0"
@@ -689,14 +689,7 @@ export default function RoomPage() {
                 : <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span className="hidden sm:inline">Invite</span></>
               }
             </button>
-            {/* Mobile: open sidebar */}
-            <button className="md:hidden btn-ghost p-1.5 relative" onClick={() => setShowChat(true)} title="Open Chat">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              {queue.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center"
-                  style={{ background: C.gold, color: 'hsl(220 22% 8%)' }}>{queue.length}</span>
-              )}
-            </button>
+
             {/* Logout */}
             {session && (
               <button id="logout-room-btn" onClick={() => signOut({ callbackUrl: '/login' })} title="Sign Out"
@@ -715,8 +708,11 @@ export default function RoomPage() {
           </div>
         </header>
 
-        {/* Video area */}
-        <div ref={videoContainerRef} className="flex-1 bg-black flex items-center justify-center relative overflow-hidden group">
+        {/* Video area — mobile: 40dvh fixed; desktop: flex-1 */}
+        <div ref={videoContainerRef}
+          data-video-container
+          className="mobile-video-h md:flex-1 bg-black flex items-center justify-center relative overflow-hidden group"
+        >
           {!room?.currentVideo && (
             <div className="text-center space-y-4 px-6">
               <div className="w-20 h-20 flex items-center justify-center mx-auto"
@@ -807,17 +803,109 @@ export default function RoomPage() {
             </button>
           </div>
         )}
+
+        {/* ── Mobile chat area ── */}
+        <div className="md:hidden flex flex-col flex-1 overflow-hidden"
+          style={{ background: 'rgba(8,10,20,0.97)', minHeight: 0 }}>
+          <div className="flex flex-shrink-0" style={{ borderBottom: '1px solid rgba(200,170,100,0.07)' }}>
+            {(['chat', 'queue'] as const).map((t) => (
+              <button key={t} onClick={() => setSidebarTab(t)}
+                className="flex-1 py-2.5 text-xs font-semibold uppercase tracking-widest transition-all relative"
+                style={sidebarTab === t
+                  ? { color: C.gold, background: C.goldFaint }
+                  : { color: C.text30, background: 'transparent' }
+                }>
+                {t === 'chat' ? 'Chat' : `Queue${queue.length > 0 ? ` (${queue.length})` : ''}`}
+                {sidebarTab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: C.gold, opacity: 0.60 }} />}
+              </button>
+            ))}
+          </div>
+
+          {sidebarTab === 'chat' && (
+            <>
+              <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin">
+                {messages.length === 0 && (
+                  <div className="flex flex-col items-center justify-center h-full text-center space-y-2 py-6">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(200,170,100,0.10)" strokeWidth="1.5">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <p className="text-xs" style={{ color: C.text20 }}>No messages yet. Say hi!</p>
+                  </div>
+                )}
+                {messages.map((msg) => {
+                  const isOwn = msg.userId === session?.user.id
+                  return (
+                    <div key={msg.id} className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className="w-6 h-6 avatar text-[10px] self-end flex-shrink-0">{msg.userName?.[0]?.toUpperCase()}</div>
+                      <div className={`max-w-[80%] space-y-0.5 flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                        <span className="text-xs px-1" style={{ color: C.text30, textAlign: isOwn ? 'right' : 'left' }}>
+                          {isOwn ? 'You' : msg.userName}
+                        </span>
+                        <div className="px-3 py-2 text-sm leading-relaxed"
+                          style={isOwn
+                            ? { background: 'linear-gradient(135deg, hsl(38 62% 42%), hsl(38 66% 50%))', color: 'hsl(220 22% 10%)', borderRadius: '12px 12px 3px 12px' }
+                            : { background: 'rgba(255,255,255,0.05)', color: C.text70, border: '1px solid rgba(200,170,100,0.08)', borderRadius: '12px 12px 12px 3px' }
+                          }>
+                          {msg.message}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+                {typingUsers.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 avatar text-[10px] flex-shrink-0" style={{ opacity: 0.5 }}>{typingUsers[0]?.[0]?.toUpperCase()}</div>
+                    <div className="px-3 py-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(200,170,100,0.07)', borderRadius: '12px 12px 12px 3px' }}>
+                      <div className="flex gap-1 items-center h-4">
+                        {[0, 150, 300].map((delay) => (
+                          <span key={delay} className="w-1.5 h-1.5 rounded-full animate-bounce"
+                            style={{ background: C.gold, opacity: 0.45, animationDelay: `${delay}ms` }} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+              <div className="p-3 flex-shrink-0" style={{ borderTop: '1px solid rgba(200,170,100,0.07)' }}>
+                <form onSubmit={sendMessage} className="flex gap-2">
+                  <input id="chat-input-mobile" value={chatInput} onChange={(e) => onTyping(e.target.value)}
+                    placeholder="Send a message..." className="input-field flex-1 py-2" />
+                  <button id="send-message-btn-mobile" type="submit" disabled={!chatInput.trim()}
+                    className="w-9 h-9 flex items-center justify-center transition-all duration-200 flex-shrink-0 disabled:opacity-35"
+                    style={{ background: 'linear-gradient(135deg, hsl(38 62% 42%), hsl(38 66% 50%))', borderRadius: '4px' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="hsl(220 22% 10%)" strokeWidth="2.5">
+                      <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                  </button>
+                </form>
+              </div>
+            </>
+          )}
+
+          {sidebarTab === 'queue' && (
+            <div className="flex-1 overflow-y-auto p-3 scrollbar-thin">
+              <QueuePanel
+                queue={queue}
+                isHost={room?.isHost ?? false}
+                userId={session?.user.id ?? ''}
+                onVote={handleQueueVote}
+                onRemove={handleQueueRemove}
+                onSkip={handleQueueSkip}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* ── Sidebar ── */}
+      {/* ── Sidebar (desktop only) ── */}
       <aside
-        className={`md:w-72 md:flex md:flex-col ${showChat ? 'flex flex-col fixed inset-0 z-40 md:static md:inset-auto' : 'hidden md:flex'}`}
+        className="hidden md:flex md:w-72 md:flex-col"
         style={{
           borderLeft: '1px solid rgba(200,170,100,0.08)',
           background: 'rgba(8,10,20,0.97)',
         }}>
 
-        {/* Mobile close header */}
         <div className="flex items-center justify-between px-4 py-3 md:hidden flex-shrink-0"
           style={{ borderBottom: '1px solid rgba(200,170,100,0.08)', background: 'rgba(5,7,15,0.95)' }}>
           <span className="text-sm font-semibold" style={{ color: C.text70, fontFamily: 'var(--font-playfair)' }}>Watch Party</span>
