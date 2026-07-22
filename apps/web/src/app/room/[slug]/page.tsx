@@ -399,6 +399,7 @@ export default function RoomPage() {
   const [showYouTubeModal, setShowYouTubeModal] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [sidebarTab, setSidebarTab] = useState<'chat' | 'queue'>('chat')
+  const [isChatFocused, setIsChatFocused] = useState(false)
 
 
   const playerRef = useRef<HTMLIFrameElement>(null)
@@ -749,7 +750,7 @@ export default function RoomPage() {
   }, [])
 
   return (
-    <div className="room-layout flex flex-col md:flex-row fixed overflow-hidden bg-background" style={{ height: 'var(--app-height)' }}>
+    <div className={`room-layout flex flex-col md:flex-row fixed overflow-hidden bg-background ${isChatFocused ? 'is-chat-focused' : ''}`} style={{ height: 'var(--app-height)' }}>
 
       {/* ── Main area (desktop: flex-col flex-1; mobile: just video+controls) ── */}
       <div className="flex flex-col min-w-0 flex-1 md:flex-1 min-h-0">
@@ -871,7 +872,7 @@ export default function RoomPage() {
 
         {/* Host Controls */}
         {room?.isHost && (
-          <div className="flex-shrink-0 p-3 md:p-4"
+          <div className="host-controls flex-shrink-0 p-3 md:p-4"
             style={{ backdropFilter: 'blur(20px)', background: 'rgba(8,10,20,0.85)', borderTop: '1px solid rgba(200,170,100,0.08)' }}>
             <div className="flex gap-2">
               <button id="youtube-picker-btn" onClick={() => setShowYouTubeModal(true)}
@@ -901,7 +902,7 @@ export default function RoomPage() {
 
          {/* Non-host: add to queue */}
          {!room?.isHost && room !== null && (
-           <div className="flex-shrink-0 px-3 pb-3 pt-2"
+           <div className="host-controls flex-shrink-0 px-3 pb-3 pt-2"
              style={{ backdropFilter: 'blur(20px)', background: 'rgba(8,10,20,0.82)', borderTop: '1px solid rgba(200,170,100,0.07)' }}>
              <button onClick={() => setShowYouTubeModal(true)}
                className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium tracking-wide transition-all"
@@ -981,6 +982,8 @@ export default function RoomPage() {
                     id="chat-input-mobile" 
                     value={chatInput} 
                     onChange={(e) => onTyping(e.target.value)}
+                    onFocus={() => setIsChatFocused(true)}
+                    onBlur={() => setIsChatFocused(false)}
                     placeholder="Send a message..." 
                     className="input-field flex-1 py-2" 
                   />

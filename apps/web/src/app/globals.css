@@ -292,6 +292,21 @@
   flex-shrink: 0;
   flex-grow: 0;
   flex-basis: 35vh;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 767px) {
+  /* When chat is focused on mobile, shrink the video to give the chat messages breathing room */
+  .room-layout.is-chat-focused .mobile-video-h {
+    height: 12vh;
+    min-height: 12vh;
+    flex-basis: 12vh;
+  }
+  
+  /* Hide the host controls to save even more space for chat messages */
+  .room-layout.is-chat-focused .host-controls {
+    display: none;
+  }
 }
 
 @media (min-width: 768px) {
