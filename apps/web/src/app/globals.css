@@ -52,7 +52,6 @@
 
   html {
     font-family: 'Source Sans 3', system-ui, sans-serif;
-    scroll-behavior: smooth;
     position: fixed;
     inset: 0;
     width: 100%;

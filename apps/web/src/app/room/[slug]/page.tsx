@@ -727,9 +727,9 @@ export default function RoomPage() {
       // Explicitly set the container height to the visual viewport height
       layout.style.height = `${vv.height}px`
 
-      // If Safari attempts to push the visual viewport, violently reset it.
+      // If Safari attempts to push the visual viewport, violently and instantly reset it.
       if (vv.offsetTop > 0 || window.scrollY > 0) {
-        window.scrollTo(0, 0)
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
         document.body.scrollTop = 0
         document.documentElement.scrollTop = 0
       }
