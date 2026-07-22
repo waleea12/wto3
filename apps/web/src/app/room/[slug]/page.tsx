@@ -676,6 +676,16 @@ export default function RoomPage() {
     socket.emit('typing', { userId: session?.user.id ?? '', userName: session?.user.name ?? '', isTyping: false })
   }
 
+  function keepRoomPinned() {
+    // iOS Safari may scroll the document when the keyboard opens. The room is
+    // fixed, so always restore the document scroll position after that pass.
+    window.scrollTo(0, 0)
+    document.documentElement.scrollTop = 0
+    document.body.scrollTop = 0
+    requestAnimationFrame(() => window.scrollTo(0, 0))
+    setTimeout(() => window.scrollTo(0, 0), 250)
+  }
+
   function onTyping(val: string) {
     setChatInput(val)
     if (!socket || !session) return
@@ -952,6 +962,7 @@ export default function RoomPage() {
                     value={chatInput} 
                     onChange={(e) => onTyping(e.target.value)}
                     placeholder="Send a message..." 
+                    onFocus={keepRoomPinned}
                     className="input-field flex-1 py-2" 
                   />
                   <button id="send-message-btn-mobile" type="submit" disabled={!chatInput.trim()}
@@ -1087,7 +1098,7 @@ export default function RoomPage() {
             <div className="p-3 flex-shrink-0" style={{ borderTop: '1px solid rgba(200,170,100,0.07)' }}>
               <form onSubmit={sendMessage} className="flex gap-2">
                 <input id="chat-input" value={chatInput} onChange={(e) => onTyping(e.target.value)}
-                  placeholder="Send a message..." className="input-field flex-1 py-2" />
+                  placeholder="Send a message..." onFocus={keepRoomPinned} className="input-field flex-1 py-2" />
                 <button id="send-message-btn" type="submit" disabled={!chatInput.trim()}
                   className="w-9 h-9 flex items-center justify-center transition-all duration-200 flex-shrink-0 disabled:opacity-35"
                   style={{ background: 'linear-gradient(135deg, hsl(38 62% 42%), hsl(38 66% 50%))', borderRadius: '4px' }}>

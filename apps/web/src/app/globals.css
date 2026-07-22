@@ -287,6 +287,15 @@
 /* On mobile, keep the video area from shrinking when keyboard opens */
 @media (max-width: 767px) {
   /* Use a stable viewport height that doesn't change with keyboard */
+  html,
+  body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   .room-layout {
     position: fixed;
     inset: 0;
