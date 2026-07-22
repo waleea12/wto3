@@ -294,6 +294,23 @@
   flex-basis: 35vh;
 }
 
+@media (max-width: 767px) {
+  /* When chat is focused on mobile, INSTANTLY shrink the video to give the chat messages breathing room.
+     We DO NOT use 'transition' here, because transitioning layout height while the Safari keyboard
+     is animating causes Safari to panic and permanently break the visual viewport. Snapping it
+     instantly avoids the bug entirely while still providing the necessary space. */
+  .room-layout.is-chat-focused .mobile-video-h {
+    height: 12vh;
+    min-height: 12vh;
+    flex-basis: 12vh;
+  }
+  
+  /* Hide the host controls to save even more space for chat messages */
+  .room-layout.is-chat-focused .host-controls {
+    display: none;
+  }
+}
+
 @media (min-width: 768px) {
   .mobile-video-h {
     height: auto;
