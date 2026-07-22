@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Playfair_Display, Source_Sans_3 } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
@@ -18,6 +18,12 @@ const sourceSans = Source_Sans_3({
 export const metadata: Metadata = {
   title: 'Watch Party — Watch Together in Sync',
   description: 'Watch YouTube and Google Drive videos in perfect synchronization with friends',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  interactiveWidget: 'overlays-content',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

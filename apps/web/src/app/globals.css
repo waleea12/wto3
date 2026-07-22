@@ -34,6 +34,16 @@
   }
 }
 
+:root {
+  --app-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-height: 100dvh;
+  }
+}
+
 @layer base {
   * {
     box-sizing: border-box;
@@ -43,6 +53,12 @@
   html {
     font-family: 'Source Sans 3', system-ui, sans-serif;
     scroll-behavior: smooth;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
   body {
@@ -51,6 +67,17 @@
       radial-gradient(ellipse at 30% 0%, rgba(180, 140, 60, 0.04) 0%, transparent 55%),
       radial-gradient(ellipse at 75% 90%, rgba(30, 40, 70, 0.35) 0%, transparent 55%);
     background-attachment: fixed;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  #__next {
+    height: 100%;
+    overflow: hidden;
   }
 }
 
@@ -287,21 +314,11 @@
 
 /* On mobile, keep the video area from shrinking when keyboard opens */
 @media (max-width: 767px) {
-  /* Use a stable viewport height that doesn't change with keyboard */
-  html,
-  body {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-
   .room-layout {
     position: fixed;
     inset: 0;
-    height: 100dvh;
-    max-height: 100dvh;
+    height: var(--app-height);
+    max-height: var(--app-height);
     display: flex;
     flex-direction: column;
     overflow: hidden;

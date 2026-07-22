@@ -727,8 +727,48 @@ export default function RoomPage() {
   // The room is fixed on mobile. Do not call scrollIntoView from the chat
   // input because iOS/Android would scroll the video out of view.
 
+  useEffect(() => {
+    const setHeight = () => {
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`)
+    }
+    setHeight()
+
+    const onResize = () => setHeight()
+
+    if (typeof window !== 'undefined' && (window as any).visualViewport) {
+      ;(window as any).visualViewport.addEventListener('resize', onResize)
+      window.addEventListener('resize', onResize)
+    } else {
+      window.addEventListener('resize', onResize)
+    }
+
+    return () => {
+      if (typeof window !== 'undefined' && (window as any).visualViewport) {
+        ;(window as any).visualViewport.removeEventListener('resize', onResize)
+        window.removeEventListener('resize', onResize)
+      } else {
+        window.removeEventListener('resize', onResize)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    const onFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        window.scrollTo(0, 0)
+      }
+    }
+
+    document.addEventListener('focusin', onFocusIn)
+
+    return () => {
+      document.removeEventListener('focusin', onFocusIn)
+    }
+  }, [])
+
   return (
-    <div className="room-layout flex flex-col md:flex-row h-[100dvh] bg-background overflow-hidden relative">
+    <div className="room-layout flex flex-col md:flex-row fixed inset-0 overflow-hidden bg-background" style={{ height: 'var(--app-height)' }}>
 
       {/* ── Main area (desktop: flex-col flex-1; mobile: just video+controls) ── */}
       <div className="flex flex-col min-w-0 flex-1 md:flex-1 min-h-0">
