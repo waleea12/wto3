@@ -223,7 +223,7 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
         currentVideo: payload.videoId,
         currentSource: payload.source,
         currentTime: 0,
-        isPlaying: false,
+        isPlaying: true,
       },
     })
 

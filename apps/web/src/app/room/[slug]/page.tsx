@@ -710,34 +710,13 @@ export default function RoomPage() {
 
   const stableYoutubeUrl = useMemo(() => {
     if (!room?.currentVideo || room.currentSource !== 'youtube') return ''
-    return `https://www.youtube.com/embed/${room.currentVideo}?enablejsapi=1&start=${Math.floor(room.currentTime || 0)}&autoplay=1&playsinline=1`
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    return `https://www.youtube.com/embed/${room.currentVideo}?enablejsapi=1&origin=${encodeURIComponent(origin)}&autoplay=1&mute=1&playsinline=1&rel=0`
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.currentVideo, room?.currentSource])
 
-  // Keyboard visibility tracking for mobile
-  const chatInputRef = useRef<HTMLInputElement>(null)
-
-  const handleChatInputFocus = useCallback(() => {
-    // On mobile, when the chat input is focused, ensure the video stays visible
-    // by using a small delay to let the keyboard open first
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      // Scroll the video container into view without moving it
-      const videoContainer = document.querySelector('[data-video-container]')
-      if (videoContainer) {
-        videoContainer.scrollIntoView({ block: 'start', behavior: 'smooth' })
-      }
-    }
-  }, [])
-
-  const handleChatInputBlur = useCallback(() => {
-    // When chat input loses focus, scroll back to video
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-      const videoContainer = document.querySelector('[data-video-container]')
-      if (videoContainer) {
-        videoContainer.scrollIntoView({ block: 'start', behavior: 'smooth' })
-      }
-    }
-  }, [])
+  // The room is fixed on mobile. Do not call scrollIntoView from the chat
+  // input because iOS/Android would scroll the video out of view.
 
   return (
     <div className="room-layout flex flex-col md:flex-row h-[100dvh] bg-background overflow-hidden relative">
@@ -827,16 +806,18 @@ export default function RoomPage() {
             <iframe ref={playerRef}
               src={stableYoutubeUrl}
               className={`w-full h-full ${!room.isHost ? 'pointer-events-none' : ''}`}
-              allow="autoplay; fullscreen"
+              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
+              title="YouTube video player"
               onLoad={() => {
-                if (!isPlayingRef.current) {
-                  setTimeout(() => {
-                    playerRef.current?.contentWindow?.postMessage(
-                      JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*'
-                    )
-                  }, 1500)
-                }
+                const target = playerRef.current?.contentWindow
+                if (!target) return
+                setTimeout(() => {
+                  target.postMessage(JSON.stringify({ event: 'listening' }), '*')
+                  target.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*')
+                  target.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [room.currentTime || 0, true] }), '*')
+                  target.postMessage(JSON.stringify({ event: 'command', func: isPlayingRef.current ? 'playVideo' : 'pauseVideo', args: [] }), '*')
+                }, 250)
               }}
             />
           )}
@@ -970,8 +951,6 @@ export default function RoomPage() {
                     id="chat-input-mobile" 
                     value={chatInput} 
                     onChange={(e) => onTyping(e.target.value)}
-                    onFocus={handleChatInputFocus}
-                    onBlur={handleChatInputBlur}
                     placeholder="Send a message..." 
                     className="input-field flex-1 py-2" 
                   />

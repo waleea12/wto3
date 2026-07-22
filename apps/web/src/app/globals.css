@@ -289,17 +289,24 @@
   /* Use a stable viewport height that doesn't change with keyboard */
   .room-layout {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
+    height: 100svh;
+    max-height: 100svh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 
-  /* Prevent the chat input from pushing the viewport */
+  /* The keyboard must not make the document scroll. The message list has
+     its own overflow container, so focus only changes that container. */
   .chat-input-area {
-    /* Use visualViewport API via JS to handle keyboard */
     touch-action: manipulation;
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  #chat-input-mobile,
+  #chat-input {
+    scroll-margin: 0;
   }
 }
