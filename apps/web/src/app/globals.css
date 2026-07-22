@@ -261,10 +261,13 @@
 /* ── Rave-style mobile layout helpers ────────────────────────────────────── */
 /* Video pinned to 40dvh on mobile; resets to flex-1 on desktop via md:flex-1 */
 .mobile-video-h {
-  height: 40dvh;
+  /* Use the layout viewport, not the shrinking visual viewport. This keeps
+     the player in place when the mobile keyboard is displayed. */
+  height: 40vh;
+  min-height: 40vh;
   flex-shrink: 0;
   flex-grow: 0;
-  flex-basis: 40dvh;
+  flex-basis: 40vh;
 }
 
 @media (min-width: 768px) {
@@ -299,8 +302,8 @@
   .room-layout {
     position: fixed;
     inset: 0;
-    height: 100svh;
-    max-height: 100svh;
+    height: 100vh;
+    max-height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
