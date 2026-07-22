@@ -312,6 +312,12 @@
   overflow-anchor: none;
 }
 
+/* Smooth movement for the chat input bar when keyboard opens */
+.chat-input-bar {
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+
 /* On mobile, keep the video area from shrinking when keyboard opens */
 @media (max-width: 767px) {
   .room-layout {

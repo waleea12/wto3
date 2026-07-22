@@ -728,42 +728,33 @@ export default function RoomPage() {
   // input because iOS/Android would scroll the video out of view.
 
   useEffect(() => {
-    const setHeight = () => {
-      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`)
-    }
-    setHeight()
+    if (typeof window === 'undefined') return
 
-    const onResize = () => setHeight()
-
-    if (typeof window !== 'undefined' && (window as any).visualViewport) {
-      ;(window as any).visualViewport.addEventListener('resize', onResize)
-      window.addEventListener('resize', onResize)
-    } else {
-      window.addEventListener('resize', onResize)
-    }
-
-    return () => {
-      if (typeof window !== 'undefined' && (window as any).visualViewport) {
-        ;(window as any).visualViewport.removeEventListener('resize', onResize)
-        window.removeEventListener('resize', onResize)
+    const updateBarPosition = () => {
+      const bar = document.getElementById('chat-input-bar')
+      if (!bar) return
+      const vv = (window as any).visualViewport
+      if (!vv) return
+      const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop
+      if (keyboardHeight > 50) {
+        bar.style.transform = `translateY(-${keyboardHeight}px)`
       } else {
-        window.removeEventListener('resize', onResize)
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    const onFocusIn = (e: FocusEvent) => {
-      const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-        window.scrollTo(0, 0)
+        bar.style.transform = 'translateY(0)'
       }
     }
 
-    document.addEventListener('focusin', onFocusIn)
+    updateBarPosition()
+
+    if ((window as any).visualViewport) {
+      ;(window as any).visualViewport.addEventListener('resize', updateBarPosition)
+      ;(window as any).visualViewport.addEventListener('scroll', updateBarPosition)
+    }
 
     return () => {
-      document.removeEventListener('focusin', onFocusIn)
+      if ((window as any).visualViewport) {
+        ;(window as any).visualViewport.removeEventListener('resize', updateBarPosition)
+        ;(window as any).visualViewport.removeEventListener('scroll', updateBarPosition)
+      }
     }
   }, [])
 
@@ -994,7 +985,7 @@ export default function RoomPage() {
                 )}
                 <div ref={chatEndRef} />
               </div>
-              <div className="p-3 flex-shrink-0 chat-input-area" style={{ borderTop: '1px solid rgba(200,170,100,0.07)' }}>
+              <div id="chat-input-bar" className="p-3 flex-shrink-0 chat-input-area chat-input-bar" style={{ borderTop: '1px solid rgba(200,170,100,0.07)' }}>
                 <form onSubmit={sendMessage} className="flex gap-2">
                   <input 
                     id="chat-input-mobile" 
@@ -1131,7 +1122,7 @@ export default function RoomPage() {
               )}
               <div ref={chatEndRef} />
             </div>
-            <div className="p-3 flex-shrink-0" style={{ borderTop: '1px solid rgba(200,170,100,0.07)' }}>
+            <div id="chat-input-bar" className="p-3 flex-shrink-0 chat-input-bar" style={{ borderTop: '1px solid rgba(200,170,100,0.07)' }}>
               <form onSubmit={sendMessage} className="flex gap-2">
                 <input id="chat-input" value={chatInput} onChange={(e) => onTyping(e.target.value)}
                   placeholder="Send a message..." onFocus={keepRoomPinned} className="input-field flex-1 py-2" />
