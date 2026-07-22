@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  interactiveWidget: 'overlays-content',
+  maximumScale: 1, // Also helps prevent iOS Safari zoom
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

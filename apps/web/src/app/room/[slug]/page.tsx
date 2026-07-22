@@ -675,15 +675,6 @@ export default function RoomPage() {
     socket.emit('typing', { userId: session?.user.id ?? '', userName: session?.user.name ?? '', isTyping: false })
   }
 
-  function keepRoomPinned() {
-    // iOS Safari aggressively scrolls when inputs are focused. Force it back.
-    window.scrollTo(0, 0)
-    document.documentElement.scrollTop = 0
-    document.body.scrollTop = 0
-    setTimeout(() => window.scrollTo(0, 0), 50)
-    setTimeout(() => window.scrollTo(0, 0), 250)
-  }
-
   function onTyping(val: string) {
     setChatInput(val)
     if (!socket || !session) return
@@ -723,38 +714,7 @@ export default function RoomPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.currentVideo, room?.currentSource])
 
-  // The room is fixed on mobile. Do not call scrollIntoView from the chat
-  // input because iOS/Android would scroll the video out of view.
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !(window as any).visualViewport) return
-
-    const vv = (window as any).visualViewport
-    const updateLayout = () => {
-      const layout = document.querySelector('.room-layout') as HTMLElement
-      if (!layout) return
-
-      // Force the main layout container to perfectly fit the visual viewport (above the keyboard)
-      layout.style.height = `${vv.height}px`
-
-      // If iOS Safari aggressively scrolls the document up, force it back to 0
-      if (window.scrollY > 0 || document.documentElement.scrollTop > 0) {
-        window.scrollTo(0, 0)
-      }
-    }
-
-    // Initial check
-    updateLayout()
-
-    // Listen to resize (keyboard opening/closing) and scroll (Safari pushing the page)
-    vv.addEventListener('resize', updateLayout)
-    vv.addEventListener('scroll', updateLayout)
-
-    return () => {
-      vv.removeEventListener('resize', updateLayout)
-      vv.removeEventListener('scroll', updateLayout)
-    }
-  }, [])
+  // iOS Safari keyboard handling is now natively managed by 100dvh in CSS.
 
   return (
     <div className="room-layout flex flex-col md:flex-row fixed inset-0 overflow-hidden bg-background" style={{ height: 'var(--app-height)' }}>
@@ -990,7 +950,6 @@ export default function RoomPage() {
                     value={chatInput} 
                     onChange={(e) => onTyping(e.target.value)}
                     placeholder="Send a message..." 
-                    onFocus={keepRoomPinned}
                     className="input-field flex-1 py-2" 
                   />
                   <button id="send-message-btn-mobile" type="submit" disabled={!chatInput.trim()}
@@ -1123,7 +1082,7 @@ export default function RoomPage() {
             <div id="chat-input-bar" className="p-3 flex-shrink-0 chat-input-bar" style={{ borderTop: '1px solid rgba(200,170,100,0.07)' }}>
               <form onSubmit={sendMessage} className="flex gap-2">
                 <input id="chat-input" value={chatInput} onChange={(e) => onTyping(e.target.value)}
-                  placeholder="Send a message..." onFocus={keepRoomPinned} className="input-field flex-1 py-2" />
+                  placeholder="Send a message..." className="input-field flex-1 py-2" />
                 <button id="send-message-btn" type="submit" disabled={!chatInput.trim()}
                   className="w-9 h-9 flex items-center justify-center transition-all duration-200 flex-shrink-0 disabled:opacity-35"
                   style={{ background: 'linear-gradient(135deg, hsl(38 62% 42%), hsl(38 66% 50%))', borderRadius: '4px' }}>
