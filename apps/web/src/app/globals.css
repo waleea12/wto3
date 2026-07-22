@@ -53,6 +53,8 @@
   html {
     font-family: 'Source Sans 3', system-ui, sans-serif;
     scroll-behavior: smooth;
+    position: fixed;
+    inset: 0;
     width: 100%;
     height: 100%;
     overflow: hidden;
@@ -65,6 +67,8 @@
       radial-gradient(ellipse at 30% 0%, rgba(180, 140, 60, 0.04) 0%, transparent 55%),
       radial-gradient(ellipse at 75% 90%, rgba(30, 40, 70, 0.35) 0%, transparent 55%);
     background-attachment: fixed;
+    position: fixed;
+    inset: 0;
     width: 100%;
     height: 100%;
     overflow: hidden;
@@ -318,7 +322,9 @@
 @media (max-width: 767px) {
   .room-layout {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
     height: var(--app-height);
     max-height: var(--app-height);
     display: flex;

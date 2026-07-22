@@ -714,10 +714,42 @@ export default function RoomPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.currentVideo, room?.currentSource])
 
-  // iOS Safari keyboard handling is now natively managed by 100dvh in CSS.
+  // Lock the viewport height to exactly match the visual viewport (space above the keyboard)
+  // and fiercely prevent Safari from translating the window.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !(window as any).visualViewport) return
+
+    const vv = (window as any).visualViewport
+    const updateLayout = () => {
+      const layout = document.querySelector('.room-layout') as HTMLElement
+      if (!layout) return
+
+      // Explicitly set the container height to the visual viewport height
+      layout.style.height = `${vv.height}px`
+
+      // If Safari attempts to push the visual viewport, violently reset it.
+      if (vv.offsetTop > 0 || window.scrollY > 0) {
+        window.scrollTo(0, 0)
+        document.body.scrollTop = 0
+        document.documentElement.scrollTop = 0
+      }
+    }
+
+    // Initial run
+    updateLayout()
+
+    // Listen to resize and scroll
+    vv.addEventListener('resize', updateLayout)
+    vv.addEventListener('scroll', updateLayout)
+
+    return () => {
+      vv.removeEventListener('resize', updateLayout)
+      vv.removeEventListener('scroll', updateLayout)
+    }
+  }, [])
 
   return (
-    <div className="room-layout flex flex-col md:flex-row fixed inset-0 overflow-hidden bg-background" style={{ height: 'var(--app-height)' }}>
+    <div className="room-layout flex flex-col md:flex-row fixed overflow-hidden bg-background" style={{ height: 'var(--app-height)' }}>
 
       {/* ── Main area (desktop: flex-col flex-1; mobile: just video+controls) ── */}
       <div className="flex flex-col min-w-0 flex-1 md:flex-1 min-h-0">
