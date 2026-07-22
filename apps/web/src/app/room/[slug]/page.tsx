@@ -398,7 +398,6 @@ export default function RoomPage() {
   const [showDriveBrowser, setShowDriveBrowser] = useState(false)
   const [showYouTubeModal, setShowYouTubeModal] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [showChat, setShowChat] = useState(false)
   const [sidebarTab, setSidebarTab] = useState<'chat' | 'queue'>('chat')
 
 
@@ -837,16 +836,7 @@ export default function RoomPage() {
               controls={!!room.isHost} className={`w-full h-full ${!room.isHost ? 'pointer-events-none' : ''}`}
               playsInline
               onPlay={handlePlay} onPause={handlePause} onSeeked={handleSeeked} />
-          )}
-           {/* Chat toggle - mobile only */}
-           <button onClick={() => setShowChat(v => !v)} title={showChat ? 'Hide Chat' : 'Show Chat'}
-             className="absolute bottom-3 left-3 w-9 h-9 flex items-center justify-center md:hidden opacity-80 hover:opacity-100 transition-all duration-200 z-20"
-             style={{ background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(200,170,100,0.22)', color: C.text70, backdropFilter: 'blur(8px)', borderRadius: '6px', pointerEvents: 'auto' }}>
-             {showChat
-               ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-               : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-             }
-           </button>
+           )}
            {/* Fullscreen button */}
            <button onClick={toggleFullscreen} title={isFullscreen ? 'تصغير' : 'تكبير'}
             className="absolute bottom-3 right-3 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-200 z-20"
@@ -888,37 +878,37 @@ export default function RoomPage() {
           </div>
         )}
 
-        {/* Non-host: add to queue */}
-        {!room?.isHost && room !== null && (
-          <div className="flex-shrink-0 px-3 pb-3 pt-2"
-            style={{ backdropFilter: 'blur(20px)', background: 'rgba(8,10,20,0.82)', borderTop: '1px solid rgba(200,170,100,0.07)' }}>
-            <button onClick={() => setShowYouTubeModal(true)}
-              className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium tracking-wide transition-all"
-              style={{ background: C.goldFaint, border: '1px solid ' + C.goldBorder, color: C.gold, borderRadius: '4px' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              أضف مقطع للطابور
-            </button>
-          </div>
-        )}
+         {/* Non-host: add to queue */}
+         {!room?.isHost && room !== null && (
+           <div className="flex-shrink-0 px-3 pb-3 pt-2"
+             style={{ backdropFilter: 'blur(20px)', background: 'rgba(8,10,20,0.82)', borderTop: '1px solid rgba(200,170,100,0.07)' }}>
+             <button onClick={() => setShowYouTubeModal(true)}
+               className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium tracking-wide transition-all"
+               style={{ background: C.goldFaint, border: '1px solid ' + C.goldBorder, color: C.gold, borderRadius: '4px' }}>
+               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+               أضف مقطع للطابور
+             </button>
+           </div>
+         )}
 
-         {showChat && (
-         <div className="md:hidden flex flex-col overflow-hidden"
-           style={{ position: 'fixed', left: 0, right: 0, top: '40vh', bottom: 0, background: 'rgba(8,10,20,0.97)', zIndex: 40 }}>
-          <div className="flex flex-shrink-0" style={{ borderBottom: '1px solid rgba(200,170,100,0.07)' }}>
-            {(['chat', 'queue'] as const).map((t) => (
-              <button key={t} onClick={() => setSidebarTab(t)}
-                className="flex-1 py-2.5 text-xs font-semibold uppercase tracking-widest transition-all relative"
-                style={sidebarTab === t
-                  ? { color: C.gold, background: C.goldFaint }
-                  : { color: C.text30, background: 'transparent' }
-                }>
-                {t === 'chat' ? 'Chat' : `Queue${queue.length > 0 ? ` (${queue.length})` : ''}`}
-                {sidebarTab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: C.gold, opacity: 0.60 }} />}
-              </button>
-            ))}
-          </div>
+         {/* ── Mobile chat area ── */}
+         <div className="md:hidden flex flex-col flex-1 overflow-hidden min-h-0"
+           style={{ background: 'rgba(8,10,20,0.97)' }}>
+           <div className="flex flex-shrink-0" style={{ borderBottom: '1px solid rgba(200,170,100,0.07)' }}>
+             {(['chat', 'queue'] as const).map((t) => (
+               <button key={t} onClick={() => setSidebarTab(t)}
+                 className="flex-1 py-2.5 text-xs font-semibold uppercase tracking-widest transition-all relative"
+                 style={sidebarTab === t
+                   ? { color: C.gold, background: C.goldFaint }
+                   : { color: C.text30, background: 'transparent' }
+                 }>
+                 {t === 'chat' ? 'Chat' : `Queue${queue.length > 0 ? ` (${queue.length})` : ''}`}
+                 {sidebarTab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: C.gold, opacity: 0.60 }} />}
+               </button>
+             ))}
+           </div>
 
-          {sidebarTab === 'chat' && (
+           {sidebarTab === 'chat' && (
             <div className="flex-1 flex flex-col min-h-0">
               <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin" style={{ minHeight: 0 }}>
                 {messages.length === 0 && (
@@ -996,11 +986,10 @@ export default function RoomPage() {
                 onRemove={handleQueueRemove}
                  onSkip={handleQueueSkip}
                />
-             </div>
-           )}
-         </div>
-         )}
-       </div>
+              </div>
+            )}
+          </div>
+        </div>
 
       {/* ── Sidebar (desktop only) ── */}
       <aside
