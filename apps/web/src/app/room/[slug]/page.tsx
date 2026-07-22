@@ -676,12 +676,11 @@ export default function RoomPage() {
   }
 
   function keepRoomPinned() {
-    // iOS Safari may scroll the document when the keyboard opens. The room is
-    // fixed, so always restore the document scroll position after that pass.
+    // iOS Safari aggressively scrolls when inputs are focused. Force it back.
     window.scrollTo(0, 0)
     document.documentElement.scrollTop = 0
     document.body.scrollTop = 0
-    requestAnimationFrame(() => window.scrollTo(0, 0))
+    setTimeout(() => window.scrollTo(0, 0), 50)
     setTimeout(() => window.scrollTo(0, 0), 250)
   }
 
@@ -728,33 +727,32 @@ export default function RoomPage() {
   // input because iOS/Android would scroll the video out of view.
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || !(window as any).visualViewport) return
 
-    const updateBarPosition = () => {
-      const bar = document.getElementById('chat-input-bar')
-      if (!bar) return
-      const vv = (window as any).visualViewport
-      if (!vv) return
-      const keyboardHeight = window.innerHeight - vv.height - vv.offsetTop
-      if (keyboardHeight > 50) {
-        bar.style.transform = `translateY(-${keyboardHeight}px)`
-      } else {
-        bar.style.transform = 'translateY(0)'
+    const vv = (window as any).visualViewport
+    const updateLayout = () => {
+      const layout = document.querySelector('.room-layout') as HTMLElement
+      if (!layout) return
+
+      // Force the main layout container to perfectly fit the visual viewport (above the keyboard)
+      layout.style.height = `${vv.height}px`
+
+      // If iOS Safari aggressively scrolls the document up, force it back to 0
+      if (window.scrollY > 0 || document.documentElement.scrollTop > 0) {
+        window.scrollTo(0, 0)
       }
     }
 
-    updateBarPosition()
+    // Initial check
+    updateLayout()
 
-    if ((window as any).visualViewport) {
-      ;(window as any).visualViewport.addEventListener('resize', updateBarPosition)
-      ;(window as any).visualViewport.addEventListener('scroll', updateBarPosition)
-    }
+    // Listen to resize (keyboard opening/closing) and scroll (Safari pushing the page)
+    vv.addEventListener('resize', updateLayout)
+    vv.addEventListener('scroll', updateLayout)
 
     return () => {
-      if ((window as any).visualViewport) {
-        ;(window as any).visualViewport.removeEventListener('resize', updateBarPosition)
-        ;(window as any).visualViewport.removeEventListener('scroll', updateBarPosition)
-      }
+      vv.removeEventListener('resize', updateLayout)
+      vv.removeEventListener('scroll', updateLayout)
     }
   }, [])
 
