@@ -838,8 +838,17 @@ export default function RoomPage() {
               playsInline
               onPlay={handlePlay} onPause={handlePause} onSeeked={handleSeeked} />
           )}
-          {/* Fullscreen button */}
-          <button onClick={toggleFullscreen} title={isFullscreen ? 'تصغير' : 'تكبير'}
+           {/* Chat toggle - mobile only */}
+           <button onClick={() => setShowChat(v => !v)} title={showChat ? 'Hide Chat' : 'Show Chat'}
+             className="absolute bottom-3 left-3 w-9 h-9 flex items-center justify-center md:hidden opacity-80 hover:opacity-100 transition-all duration-200 z-20"
+             style={{ background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(200,170,100,0.22)', color: C.text70, backdropFilter: 'blur(8px)', borderRadius: '6px', pointerEvents: 'auto' }}>
+             {showChat
+               ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+               : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+             }
+           </button>
+           {/* Fullscreen button */}
+           <button onClick={toggleFullscreen} title={isFullscreen ? 'تصغير' : 'تكبير'}
             className="absolute bottom-3 right-3 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-200 z-20"
             style={{ background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(200,170,100,0.22)', color: C.text70, backdropFilter: 'blur(8px)', borderRadius: '6px', pointerEvents: 'auto' }}>
             {isFullscreen
@@ -892,9 +901,9 @@ export default function RoomPage() {
           </div>
         )}
 
-        {/* ── Mobile chat area ── */}
-        <div className="md:hidden flex flex-col flex-1 overflow-hidden min-h-0"
-          style={{ background: 'rgba(8,10,20,0.97)' }}>
+         {showChat && (
+         <div className="md:hidden flex flex-col overflow-hidden"
+           style={{ position: 'fixed', left: 0, right: 0, top: '40vh', bottom: 0, background: 'rgba(8,10,20,0.97)', zIndex: 40 }}>
           <div className="flex flex-shrink-0" style={{ borderBottom: '1px solid rgba(200,170,100,0.07)' }}>
             {(['chat', 'queue'] as const).map((t) => (
               <button key={t} onClick={() => setSidebarTab(t)}
@@ -985,12 +994,13 @@ export default function RoomPage() {
                 userId={session?.user.id ?? ''}
                 onVote={handleQueueVote}
                 onRemove={handleQueueRemove}
-                onSkip={handleQueueSkip}
-              />
-            </div>
-          )}
-        </div>
-      </div>
+                 onSkip={handleQueueSkip}
+               />
+             </div>
+           )}
+         </div>
+         )}
+       </div>
 
       {/* ── Sidebar (desktop only) ── */}
       <aside
@@ -1000,13 +1010,10 @@ export default function RoomPage() {
           background: 'rgba(8,10,20,0.97)',
         }}>
 
-        <div className="flex items-center justify-between px-4 py-3 md:hidden flex-shrink-0"
-          style={{ borderBottom: '1px solid rgba(200,170,100,0.08)', background: 'rgba(5,7,15,0.95)' }}>
-          <span className="text-sm font-semibold" style={{ color: C.text70, fontFamily: 'var(--font-playfair)' }}>Watch Party</span>
-          <button onClick={() => setShowChat(false)} className="btn-ghost p-1.5">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
+         <div className="flex items-center justify-between px-4 py-3 md:hidden flex-shrink-0"
+           style={{ borderBottom: '1px solid rgba(200,170,100,0.08)', background: 'rgba(5,7,15,0.95)' }}>
+           <span className="text-sm font-semibold" style={{ color: C.text70, fontFamily: 'var(--font-playfair)' }}>Watch Party</span>
+         </div>
 
         {/* Participants */}
         <div className="p-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(200,170,100,0.07)' }}>
