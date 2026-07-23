@@ -715,8 +715,37 @@ export default function RoomPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.currentVideo, room?.currentSource])
 
+  // Keep --app-height CSS variable in sync with the visual viewport
+  // (respects the keyboard on mobile without touching inline styles on .room-layout)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const vv = (window as any).visualViewport
+
+    function setAppHeight() {
+      const height = vv ? vv.height : window.innerHeight
+      document.documentElement.style.setProperty('--app-height', `${height}px`)
+      if (vv && vv.offsetTop > 0) {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior })
+      }
+    }
+
+    setAppHeight()
+
+    if (vv) {
+      vv.addEventListener('resize', setAppHeight)
+      vv.addEventListener('scroll', setAppHeight)
+      return () => {
+        vv.removeEventListener('resize', setAppHeight)
+        vv.removeEventListener('scroll', setAppHeight)
+      }
+    } else {
+      window.addEventListener('resize', setAppHeight)
+      return () => window.removeEventListener('resize', setAppHeight)
+    }
+  }, [])
+
   return (
-    <div className={`room-layout flex flex-col md:flex-row fixed inset-0 overflow-hidden bg-background ${isChatFocused ? 'is-chat-focused' : ''}`}>
+    <div className={`room-layout flex flex-col md:flex-row fixed inset-0 overflow-hidden bg-background ${isChatFocused ? 'is-chat-focused' : ''}`} style={{ height: 'var(--app-height)' }}>
 
       {/* ── Main area (desktop: flex-col flex-1; mobile: just video+controls) ── */}
       <div className="flex flex-col min-w-0 flex-1 md:flex-1 min-h-0">
