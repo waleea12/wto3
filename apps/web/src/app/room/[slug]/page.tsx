@@ -411,6 +411,7 @@ export default function RoomPage() {
   const isPlayingRef = useRef<boolean>(false)
   const ytCurrentTimeRef = useRef<number>(0)
   const roomSourceRef = useRef<VideoSource>(null)
+  const isChatFocusedRef = useRef<boolean>(false)
 
   useEffect(() => {
     if (session?.user.serverToken && !connected) connect(session.user.serverToken)
@@ -729,7 +730,9 @@ export default function RoomPage() {
       layout.style.height = `${vv.height}px`
 
       // If Safari attempts to push the visual viewport, violently and instantly reset it.
-      if (vv.offsetTop > 0 || window.scrollY > 0) {
+      // BUT skip the reset when the chat input is focused — the keyboard needs to scroll
+      // the page so the user can see what they're typing.
+      if (!isChatFocusedRef.current && (vv.offsetTop > 0 || window.scrollY > 0)) {
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
         document.body.scrollTop = 0
         document.documentElement.scrollTop = 0
@@ -748,6 +751,21 @@ export default function RoomPage() {
       vv.removeEventListener('scroll', updateLayout)
     }
   }, [])
+
+  // Helper: focus mobile chat input (scrolls it into view above keyboard)
+  const handleMobileChatFocus = () => {
+    setIsChatFocused(true)
+    isChatFocusedRef.current = true
+    // Allow keyboard to open first, then scroll input into view
+    setTimeout(() => {
+      document.getElementById('chat-input-mobile')?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }, 300)
+  }
+
+  const handleMobileChatBlur = () => {
+    setIsChatFocused(false)
+    isChatFocusedRef.current = false
+  }
 
   return (
     <div className={`room-layout flex flex-col md:flex-row fixed inset-x-0 overflow-hidden bg-background ${isChatFocused ? 'is-chat-focused' : ''}`} style={{ height: 'var(--app-height)' }}>
@@ -981,6 +999,8 @@ export default function RoomPage() {
                     id="chat-input-mobile" 
                     value={chatInput} 
                     onChange={(e) => onTyping(e.target.value)}
+                    onFocus={handleMobileChatFocus}
+                    onBlur={handleMobileChatBlur}
                     placeholder="Send a message..." 
                     className="input-field flex-1 py-2" 
                   />
