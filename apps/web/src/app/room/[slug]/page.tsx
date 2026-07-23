@@ -711,7 +711,7 @@ export default function RoomPage() {
   const stableYoutubeUrl = useMemo(() => {
     if (!room?.currentVideo || room.currentSource !== 'youtube') return ''
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    return `https://www.youtube.com/embed/${room.currentVideo}?enablejsapi=1&origin=${encodeURIComponent(origin)}&autoplay=1&mute=1&playsinline=1&rel=0`
+    return `https://www.youtube.com/embed/${room.currentVideo}?enablejsapi=1&origin=${encodeURIComponent(origin)}&autoplay=1&mute=1&playsinline=1&controls=1&rel=0`
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.currentVideo, room?.currentSource])
 
@@ -750,7 +750,7 @@ export default function RoomPage() {
   }, [])
 
   return (
-    <div className={`room-layout flex flex-col md:flex-row fixed overflow-hidden bg-background ${isChatFocused ? 'is-chat-focused' : ''}`} style={{ height: 'var(--app-height)' }}>
+    <div className={`room-layout flex flex-col md:flex-row fixed inset-x-0 overflow-hidden bg-background ${isChatFocused ? 'is-chat-focused' : ''}`} style={{ height: 'var(--app-height)' }}>
 
       {/* ── Main area (desktop: flex-col flex-1; mobile: just video+controls) ── */}
       <div className="flex flex-col min-w-0 flex-1 md:flex-1 min-h-0">
@@ -836,7 +836,7 @@ export default function RoomPage() {
           {room?.currentVideo && room.currentSource === 'youtube' && (
             <iframe ref={playerRef}
               src={stableYoutubeUrl}
-              className={`w-full h-full ${!room.isHost ? 'pointer-events-none' : ''}`}
+              className="w-full h-full"
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
               title="YouTube video player"
@@ -845,7 +845,6 @@ export default function RoomPage() {
                 if (!target) return
                 setTimeout(() => {
                   target.postMessage(JSON.stringify({ event: 'listening' }), '*')
-                  target.postMessage(JSON.stringify({ event: 'command', func: 'mute', args: [] }), '*')
                   target.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [room.currentTime || 0, true] }), '*')
                   target.postMessage(JSON.stringify({ event: 'command', func: isPlayingRef.current ? 'playVideo' : 'pauseVideo', args: [] }), '*')
                 }, 250)
@@ -1014,7 +1013,7 @@ export default function RoomPage() {
 
       {/* ── Sidebar (desktop only) ── */}
       <aside
-        className="hidden md:flex md:w-72 md:flex-col"
+        className="hidden md:flex md:w-80 md:flex-col"
         style={{
           borderLeft: '1px solid rgba(200,170,100,0.08)',
           background: 'rgba(8,10,20,0.97)',
