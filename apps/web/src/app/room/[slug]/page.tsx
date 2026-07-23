@@ -400,7 +400,8 @@ export default function RoomPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [sidebarTab, setSidebarTab] = useState<'chat' | 'queue'>('chat')
   const [isChatFocused, setIsChatFocused] = useState(false)
-  const [videoHeightPx, setVideoHeightPx] = useState<number | null>(null)
+const [videoHeightPx, setVideoHeightPx] = useState<number | null>(null)
+const [isVideoExpanded, setIsVideoExpanded] = useState(false)
 
 
   const playerRef = useRef<HTMLIFrameElement>(null)
@@ -824,7 +825,7 @@ export default function RoomPage() {
         <div ref={videoContainerRef}
           data-video-container
           className="md:flex-1 bg-black flex items-center justify-center relative overflow-hidden group"
-          style={videoHeightPx ? { height: `${videoHeightPx}px`, flexShrink: 0, flexGrow: 0 } : undefined}
+          style={videoHeightPx ? { height: isVideoExpanded ? `${Math.round(videoHeightPx * 1.5)}px` : `${videoHeightPx}px`, flexShrink: 0, flexGrow: 0 } : undefined}
         >
           {!room?.currentVideo && (
             <div className="text-center space-y-4 px-6">
@@ -865,6 +866,16 @@ export default function RoomPage() {
               playsInline
               onPlay={handlePlay} onPause={handlePause} onSeeked={handleSeeked} />
            )}
+           {/* Expand/collapse button */}
+           <button onClick={() => setIsVideoExpanded(!isVideoExpanded)} title={isVideoExpanded ? 'تصغير الفيديو' : 'تكبير الفيديو'}
+            className="absolute bottom-3 right-14 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-200 z-20"
+            style={{ background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(200,170,100,0.22)', color: C.text70, backdropFilter: 'blur(8px)', borderRadius: '6px', pointerEvents: 'auto' }}>
+            {isVideoExpanded
+              ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+              : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            }
+          </button>
+
            {/* Fullscreen button */}
            <button onClick={toggleFullscreen} title={isFullscreen ? 'تصغير' : 'تكبير'}
             className="absolute bottom-3 right-3 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-200 z-20"
