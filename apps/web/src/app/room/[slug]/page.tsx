@@ -400,6 +400,7 @@ export default function RoomPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [sidebarTab, setSidebarTab] = useState<'chat' | 'queue'>('chat')
   const [isChatFocused, setIsChatFocused] = useState(false)
+  const [videoHeightPx, setVideoHeightPx] = useState<number | null>(null)
 
 
   const playerRef = useRef<HTMLIFrameElement>(null)
@@ -415,6 +416,16 @@ export default function RoomPage() {
   useEffect(() => {
     if (session?.user.serverToken && !connected) connect(session.user.serverToken)
   }, [session, connected, connect])
+
+  // Calculate video height once on mount (pixel value, doesn't change with keyboard)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const isMobile = window.innerWidth < 768
+    if (isMobile) {
+      const initialHeight = window.innerHeight
+      setVideoHeightPx(Math.round(initialHeight * 0.42))
+    }
+  }, [])
 
   useEffect(() => {
     isPlayingRef.current = room?.isPlaying ?? false
@@ -812,7 +823,8 @@ export default function RoomPage() {
         {/* Video area — mobile: 40dvh fixed; desktop: flex-1 */}
         <div ref={videoContainerRef}
           data-video-container
-          className="mobile-video-h md:flex-1 bg-black flex items-center justify-center relative overflow-hidden group"
+          className="md:flex-1 bg-black flex items-center justify-center relative overflow-hidden group"
+          style={videoHeightPx ? { height: `${videoHeightPx}px`, flexShrink: 0, flexGrow: 0 } : undefined}
         >
           {!room?.currentVideo && (
             <div className="text-center space-y-4 px-6">
