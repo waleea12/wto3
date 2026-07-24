@@ -57,49 +57,64 @@ export default function LoginPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background accents */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(200,160,60,0.15), transparent)' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full"
-          style={{ background: 'radial-gradient(ellipse, rgba(180,140,50,0.04) 0%, transparent 70%)' }} />
+      {/* Background decorations — subtle clouds */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <div className="absolute top-[8%] left-[10%] animate-pixel-float" style={{ animationDelay: '0s', opacity: 0.5 }}>
+          <div className="w-16 h-7 bg-white border-2 border-[#1a1a2e]" style={{ boxShadow: '3px 3px 0 #1a1a2e' }}>
+            <div className="w-8 h-4 bg-white border-2 border-[#1a1a2e] absolute -top-2 left-2" />
+          </div>
+        </div>
+        <div className="absolute top-[20%] right-[12%] animate-pixel-float" style={{ animationDelay: '1.5s', opacity: 0.5 }}>
+          <div className="w-14 h-6 bg-white border-2 border-[#1a1a2e]" style={{ boxShadow: '3px 3px 0 #1a1a2e' }}>
+            <div className="w-7 h-4 bg-white border-2 border-[#1a1a2e] absolute -top-2 left-1" />
+          </div>
+        </div>
       </div>
 
-      <div
-        className="relative z-10 w-full max-w-md"
-        style={{
-          background: 'rgba(11, 14, 25, 0.90)',
-          border: '1px solid rgba(200,170,100,0.13)',
-          borderRadius: '6px',
-          boxShadow: '0 24px 70px rgba(0,0,0,0.60), inset 0 1px 0 rgba(255,255,255,0.03)',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Top gold accent bar */}
-        <div style={{ height: 2, background: 'linear-gradient(90deg, transparent 0%, rgba(200,160,60,0.55) 40%, rgba(200,160,60,0.55) 60%, transparent 100%)' }} />
+      {/* Window container */}
+      <div className="pixel-window relative z-10 w-full max-w-md" style={{ overflow: 'hidden' }}>
+        {/* Title bar */}
+        <div className="pixel-window-titlebar" style={{ borderBottom: '3px solid #1a1a2e' }}>
+          <div className="pixel-dot pixel-dot-red" />
+          <div className="pixel-dot pixel-dot-yellow" />
+          <div className="pixel-dot pixel-dot-green" />
+          <span style={{
+            fontSize: '9px',
+            fontFamily: 'var(--font-pixel)',
+            color: '#1a1a2e',
+            opacity: 0.6,
+            marginLeft: 8,
+          }}>
+            {isRegistering ? 'register.exe' : 'login.exe'}
+          </span>
+        </div>
 
-        <div className="p-8 space-y-7">
+        <div className="p-8 space-y-6">
           {/* Header */}
           <div className="text-center space-y-3">
             <div
-              className="w-12 h-12 flex items-center justify-center rounded-full mx-auto"
+              className="w-14 h-14 flex items-center justify-center mx-auto"
               style={{
-                background: 'rgba(10,12,22,0.95)',
-                border: '1px solid rgba(200,160,60,0.30)',
-                boxShadow: '0 0 0 5px rgba(200,155,50,0.05)',
+                background: '#FFC940',
+                border: '3px solid #1a1a2e',
+                boxShadow: '4px 4px 0px #1a1a2e',
               }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <polygon points="5 3 19 12 5 21 5 3" fill="rgba(210,170,80,0.85)" />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#1a1a2e">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
               </svg>
             </div>
             <div>
               <h1
                 className="text-2xl font-bold"
-                style={{ fontFamily: 'var(--font-playfair)', color: 'rgba(225,210,175,0.95)' }}
+                style={{ fontFamily: 'var(--font-pixel)', color: '#1a1a2e', fontSize: '1rem' }}
               >
                 Watch Party
               </h1>
-              <p className="mt-1 text-sm" style={{ color: 'rgba(200,185,150,0.42)' }}>
+              <p className="mt-1 text-sm" style={{ color: '#1a1a2e', opacity: 0.55, fontFamily: 'var(--font-mono)' }}>
                 {isRegistering ? 'Create an account to join the party' : 'Sign in to join the party'}
               </p>
             </div>
@@ -111,10 +126,10 @@ export default function LoginPage() {
               <div
                 className="p-3 text-sm"
                 style={{
-                  background: 'rgba(200,60,60,0.08)',
-                  border: '1px solid rgba(200,60,60,0.25)',
-                  borderRadius: '4px',
-                  color: 'rgba(230,160,155,0.90)',
+                  background: '#FFF5F5',
+                  border: '2px solid #FF5F57',
+                  color: '#CC0000',
+                  fontFamily: 'var(--font-mono)',
                 }}
               >
                 {error}
@@ -123,7 +138,7 @@ export default function LoginPage() {
 
             {isRegistering && (
               <div className="space-y-1.5">
-                <label className="block text-xs font-semibold tracking-wide uppercase" style={{ color: 'rgba(200,180,130,0.55)', letterSpacing: '0.07em' }}>
+                <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: '#1a1a2e', opacity: 0.6, fontFamily: 'var(--font-mono)' }}>
                   Display Name
                 </label>
                 <input
@@ -138,7 +153,7 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold tracking-wide uppercase" style={{ color: 'rgba(200,180,130,0.55)', letterSpacing: '0.07em' }}>
+              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: '#1a1a2e', opacity: 0.6, fontFamily: 'var(--font-mono)' }}>
                 Email
               </label>
               <input
@@ -152,7 +167,7 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold tracking-wide uppercase" style={{ color: 'rgba(200,180,130,0.55)', letterSpacing: '0.07em' }}>
+              <label className="block text-xs font-bold uppercase tracking-wider" style={{ color: '#1a1a2e', opacity: 0.6, fontFamily: 'var(--font-mono)' }}>
                 Password
               </label>
               <input
@@ -168,34 +183,41 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-3 mt-1"
+              className="btn-primary w-full py-3 mt-2"
             >
-              {loading ? 'Please wait...' : (isRegistering ? 'Create Account' : 'Sign In')}
+              {loading ? 'Please wait...' : (isRegistering ? '⭐ Create Account' : '⚡ Sign In')}
             </button>
           </form>
 
           {/* Divider */}
           <div className="relative flex items-center gap-3">
-            <div className="flex-1 h-px" style={{ background: 'rgba(200,165,70,0.10)' }} />
-            <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: 'rgba(200,175,120,0.30)' }}>
+            <div className="flex-1" style={{ height: 2, background: '#1a1a2e', opacity: 0.12 }} />
+            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#1a1a2e', opacity: 0.35, fontFamily: 'var(--font-mono)' }}>
               or continue with
             </span>
-            <div className="flex-1 h-px" style={{ background: 'rgba(200,165,70,0.10)' }} />
+            <div className="flex-1" style={{ height: 2, background: '#1a1a2e', opacity: 0.12 }} />
           </div>
 
           {/* Google sign-in */}
           <button
             onClick={() => signIn('google', { callbackUrl: '/' })}
-            className="w-full flex items-center justify-center gap-3 px-5 py-2.5 font-medium text-sm transition-all duration-200"
+            className="w-full flex items-center justify-center gap-3 px-5 py-2.5 font-bold text-sm transition-all duration-100"
             style={{
-              background: 'rgba(255,255,255,0.97)',
+              background: '#fff',
               color: '#1a1a2e',
-              borderRadius: '4px',
-              border: '1px solid rgba(0,0,0,0.08)',
-              letterSpacing: '0.02em',
+              border: '2px solid #1a1a2e',
+              boxShadow: '3px 3px 0px #1a1a2e',
+              fontFamily: 'var(--font-mono)',
+              textTransform: 'uppercase',
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#f1f1f1' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.97)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translate(1px, 1px)';
+              e.currentTarget.style.boxShadow = '1px 1px 0px #1a1a2e';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translate(0, 0)';
+              e.currentTarget.style.boxShadow = '3px 3px 0px #1a1a2e';
+            }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -207,14 +229,14 @@ export default function LoginPage() {
           </button>
 
           {/* Toggle register / login */}
-          <p className="text-center text-sm" style={{ color: 'rgba(200,185,150,0.42)' }}>
+          <p className="text-center text-sm" style={{ color: '#1a1a2e', opacity: 0.5, fontFamily: 'var(--font-mono)' }}>
             {isRegistering ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
               onClick={() => { setIsRegistering(!isRegistering); setError('') }}
-              className="font-semibold transition-colors duration-200"
-              style={{ color: 'rgba(210,170,80,0.85)' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(220,185,100,1)' }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(210,170,80,0.85)' }}
+              className="font-bold transition-all duration-100 underline"
+              style={{ color: '#1a1a2e' }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#FFC940' }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#1a1a2e' }}
             >
               {isRegistering ? 'Sign In' : 'Sign Up'}
             </button>

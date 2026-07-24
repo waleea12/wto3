@@ -45,20 +45,27 @@ interface QueueItem {
   votes: string[]
 }
 
-// ── Colour tokens ─────────────────────────────────────────────────────────────
+// ── Pixel art colour tokens ──────────────────────────────────────────────────
 const C = {
-  gold:       'rgba(210,170,80,0.88)',
-  goldFaint:  'rgba(200,165,70,0.12)',
-  goldBorder: 'rgba(200,160,60,0.20)',
-  text90:     'rgba(225,210,175,0.92)',
-  text70:     'rgba(210,195,160,0.70)',
-  text50:     'rgba(200,185,150,0.50)',
-  text30:     'rgba(200,180,135,0.30)',
-  text20:     'rgba(200,180,135,0.20)',
-  bgPanel:    'rgba(10,12,22,0.92)',
-  bgCard:     'rgba(200,165,60,0.05)',
-  border:     'rgba(200,170,100,0.10)',
-  borderSub:  'rgba(200,170,100,0.07)',
+  dark:      '#1a1a2e',
+  gold:      '#FFC940',
+  goldDark:  '#E5A800',
+  teal:      '#26C6DA',
+  tealDark:  '#00ACC1',
+  white:     '#ffffff',
+  offWhite:  '#f8f8f8',
+  lightGray: '#f0f0f0',
+  text:      '#1a1a2e',
+  textFaded:'rgba(26,26,46,0.55)',
+  textFaint: 'rgba(26,26,46,0.30)',
+  textSubtle:'rgba(26,26,46,0.20)',
+  border:    '#1a1a2e',
+  red:       '#FF5F57',
+  green:     '#28C840',
+  bgPanel:   'rgba(255,255,255,0.92)',
+  bgGlass:   'rgba(255,255,255,0.78)',
+  shadow:    '3px 3px 0px #1a1a2e',
+  shadowSm:  '2px 2px 0px #1a1a2e',
 }
 
 // ── YouTube Search Modal ──────────────────────────────────────────────────────
@@ -147,42 +154,26 @@ function YouTubeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.80)', backdropFilter: 'blur(8px)' }}
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="w-full max-w-2xl flex flex-col overflow-hidden"
-        style={{
-          background: 'rgba(11,14,24,0.98)',
-          border: '1px solid rgba(200,170,100,0.14)',
-          borderRadius: '6px',
-          maxHeight: '88dvh',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.75)',
-        }}>
-        {/* Gold top accent */}
-        <div style={{ height: 2, background: 'linear-gradient(90deg, transparent, rgba(200,160,60,0.50), transparent)', flexShrink: 0 }} />
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 flex-shrink-0"
-          style={{ borderBottom: '1px solid rgba(200,170,100,0.08)' }}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 flex items-center justify-center"
-              style={{ background: 'rgba(255,0,0,0.12)', border: '1px solid rgba(255,0,0,0.22)', borderRadius: '4px' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" fill="#ff4444"/>
-                <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white"/>
-              </svg>
-            </div>
-            <span className="font-semibold text-sm" style={{ color: C.text90 }}>YouTube</span>
-            {!isHost && (
-              <span className="text-xs px-2 py-0.5"
-                style={{ background: C.goldFaint, color: C.gold, border: '1px solid ' + C.goldBorder, borderRadius: '3px' }}>
-                سيُضاف للطابور
-              </span>
-            )}
-          </div>
+      <div className="pixel-window w-full max-w-2xl flex flex-col" style={{ maxHeight: '88dvh' }}>
+        {/* Title bar */}
+        <div className="pixel-window-titlebar flex-shrink-0">
+          <div className="pixel-dot pixel-dot-red" />
+          <div className="pixel-dot pixel-dot-yellow" />
+          <div className="pixel-dot pixel-dot-green" />
+          <span style={{ fontSize: '9px', fontFamily: 'var(--font-pixel)', color: C.dark, opacity: 0.6, marginLeft: 8 }}>
+            youtube.exe
+          </span>
+          {!isHost && (
+            <span className="text-xs px-2 py-0.5 ml-auto" style={{ background: C.gold, color: C.dark, border: '2px solid ' + C.border, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+              سيُضاف للطابور
+            </span>
+          )}
           <button onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center transition-colors duration-150"
-            style={{ background: 'rgba(255,255,255,0.05)', color: C.text50, borderRadius: '4px', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            className="w-7 h-7 flex items-center justify-center ml-2 transition-all duration-100"
+            style={{ background: '#fff', color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 
@@ -190,10 +181,10 @@ function YouTubeModal({
         <div className="flex px-5 pt-3 gap-1 flex-shrink-0">
           {(['search', 'url'] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)}
-              className="px-4 py-1.5 text-sm font-medium transition-all duration-200"
+              className="px-4 py-1.5 text-sm font-semibold transition-all duration-100"
               style={tab === t
-                ? { background: C.goldFaint, color: C.gold, border: '1px solid ' + C.goldBorder, borderRadius: '3px' }
-                : { background: 'transparent', color: C.text30, border: '1px solid transparent', borderRadius: '3px' }}>
+                ? { background: C.gold, color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)' }
+                : { background: C.offWhite, color: C.textFaded, border: '2px solid transparent', fontFamily: 'var(--font-mono)' }}>
               {t === 'search' ? '🔍 بحث' : '🔗 رابط مباشر'}
             </button>
           ))}
@@ -225,29 +216,29 @@ function YouTubeModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {results.map((v) => (
                     <div key={v.id} className="overflow-hidden"
-                      style={{ background: 'rgba(255,255,255,0.03)', border: C.border, borderRadius: '4px' }}>
+                      style={{ background: C.offWhite, border: '2px solid ' + C.border }}>
                       <div className="relative" style={{ aspectRatio: '16/9' }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={v.thumbnail} alt={v.title} className="w-full h-full object-cover" />
                         {v.duration && (
                           <span className="absolute bottom-1 right-1 px-1 text-[10px] font-bold text-white"
-                            style={{ background: 'rgba(0,0,0,0.75)', borderRadius: '2px' }}>{v.duration}</span>
+                            style={{ background: C.dark, border: '1px solid ' + C.dark }}>{v.duration}</span>
                         )}
                       </div>
                       <div className="p-2.5">
-                        <p className="text-sm font-medium leading-tight line-clamp-2 mb-1" style={{ color: C.text90 }}>{v.title}</p>
-                        <p className="text-xs mb-2.5" style={{ color: C.text30 }}>{v.channel}</p>
+                        <p className="text-sm font-medium leading-tight line-clamp-2 mb-1" style={{ color: C.dark, fontFamily: 'var(--font-mono)' }}>{v.title}</p>
+                        <p className="text-xs mb-2.5" style={{ color: C.textFaded }}>{v.channel}</p>
                         <div className="flex gap-2">
                           {isHost && (
                             <button onClick={() => onPlay(v.id, v.title, v.thumbnail)}
-                              className="flex-1 py-1.5 text-xs font-semibold transition-all"
-                              style={{ background: 'linear-gradient(135deg, hsl(38 68% 44%), hsl(38 72% 52%))', color: 'hsl(220 22% 8%)', borderRadius: '3px' }}>
+                              className="flex-1 py-1.5 text-xs font-bold transition-all duration-100"
+                              style={{ background: C.gold, color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
                               ▶ تشغيل
                             </button>
                           )}
                           <button onClick={() => onQueue(v.id, v.title, v.thumbnail)}
-                            className="flex-1 py-1.5 text-xs font-semibold transition-all"
-                            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', color: C.text70, borderRadius: '3px' }}>
+                            className="flex-1 py-1.5 text-xs font-bold transition-all duration-100"
+                            style={{ background: C.teal, color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
                             + طابور
                           </button>
                         </div>
@@ -260,13 +251,13 @@ function YouTubeModal({
               {results.length === 0 && !loading && (
                 <div className="flex flex-col items-center justify-center py-14 gap-3">
                   <div className="w-14 h-14 flex items-center justify-center"
-                    style={{ background: 'rgba(255,0,0,0.06)', border: '1px solid rgba(255,0,0,0.12)', borderRadius: '4px' }}>
+                    style={{ background: C.offWhite, border: '2px solid ' + C.border }}>
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
                       <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" fill="rgba(255,68,68,0.45)"/>
                       <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="rgba(255,255,255,0.45)"/>
                     </svg>
                   </div>
-                  <p className="text-sm" style={{ color: C.text30 }}>ابحث عن أي مقطع على يوتيوب</p>
+                  <p className="text-sm" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)' }}>ابحث عن أي مقطع على يوتيوب</p>
                 </div>
               )}
             </>
@@ -296,11 +287,11 @@ function QueuePanel({
   if (queue.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(200,170,100,0.15)" strokeWidth="1.5">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,46,0.12)" strokeWidth="1.5">
           <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
           <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
         </svg>
-        <p className="text-xs" style={{ color: C.text20 }}>الطابور فارغ</p>
+        <p className="text-xs" style={{ color: C.textSubtle, fontFamily: 'var(--font-mono)' }}>الطابور فارغ</p>
       </div>
     )
   }
@@ -309,8 +300,8 @@ function QueuePanel({
     <div className="space-y-2">
       {isHost && (
         <button onClick={onSkip}
-          className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold tracking-wide transition-all"
-          style={{ background: C.goldFaint, border: '1px solid ' + C.goldBorder, color: C.gold, borderRadius: '3px' }}>
+          className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold tracking-wide transition-all duration-100"
+          style={{ background: C.gold, border: '2px solid ' + C.border, color: C.dark, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
           </svg>
@@ -322,21 +313,21 @@ function QueuePanel({
         const isOwner = item.addedBy === userId
         return (
           <div key={item.id} className="flex gap-2.5 p-2.5 group"
-            style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(200,170,100,0.07)', borderRadius: '4px' }}>
+            style={{ background: C.offWhite, border: '2px solid ' + C.border }}>
             {/* Rank */}
             <div className="w-5 flex-shrink-0 flex items-start justify-center pt-0.5">
-              <span className="text-[10px] font-bold" style={{ color: C.text20 }}>#{idx + 1}</span>
+              <span className="text-[10px] font-bold" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)' }}>#{idx + 1}</span>
             </div>
 
             {/* Thumbnail */}
             {item.thumbnail && item.source === 'youtube' && (
-              <div className="flex-shrink-0 overflow-hidden" style={{ width: 56, height: 32, borderRadius: '3px' }}>
+              <div className="flex-shrink-0 overflow-hidden" style={{ width: 56, height: 32, border: '1.5px solid ' + C.border }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
               </div>
             )}
             {item.source === 'drive' && (
-              <div className="flex-shrink-0 w-14 h-8 flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '3px' }}>
+              <div className="flex-shrink-0 w-14 h-8 flex items-center justify-center" style={{ background: C.lightGray, border: '1.5px solid ' + C.border }}>
                 <svg width="14" height="14" viewBox="0 0 87.3 78" fill="none">
                   <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0a15.4 15.4 0 0 0 2.1 7.85z" fill="#0066da"/>
                   <path d="M43.65 25L29.9 1.2a15.4 15.4 0 0 0-3.3 3.3L2.1 45.5A15.35 15.35 0 0 0 0 53.0h27.5L43.65 25z" fill="#00ac47"/>
@@ -347,17 +338,17 @@ function QueuePanel({
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium line-clamp-2 leading-tight" style={{ color: C.text90 }}>{item.title || item.videoId}</p>
-              <p className="text-[10px] mt-0.5" style={{ color: C.text30 }}>بواسطة {item.addedByName}</p>
+              <p className="text-xs font-semibold line-clamp-2 leading-tight" style={{ color: C.dark, fontFamily: 'var(--font-mono)' }}>{item.title || item.videoId}</p>
+              <p className="text-[10px] mt-0.5" style={{ color: C.textFaded }}>بواسطة {item.addedByName}</p>
             </div>
 
             {/* Actions */}
             <div className="flex flex-col items-center gap-1 flex-shrink-0">
               <button onClick={() => onVote(item.id)}
-                className="flex flex-col items-center gap-0.5 px-1.5 py-1 transition-all"
+                className="flex flex-col items-center gap-0.5 px-1.5 py-1 transition-all duration-100"
                 style={hasVoted
-                  ? { background: C.goldFaint, border: '1px solid ' + C.goldBorder, color: C.gold, borderRadius: '3px' }
-                  : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: C.text30, borderRadius: '3px' }
+                  ? { background: C.gold, border: '2px solid ' + C.border, color: C.dark, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)' }
+                  : { background: C.lightGray, border: '2px solid ' + C.border, color: C.textFaded, fontFamily: 'var(--font-mono)' }
                 }>
                 <svg width="9" height="9" viewBox="0 0 24 24" fill={hasVoted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5">
                   <path d="M12 19V5M5 12l7-7 7 7"/>
@@ -367,8 +358,8 @@ function QueuePanel({
 
               {(isOwner || isHost) && (
                 <button onClick={() => onRemove(item.id)}
-                  className="p-1 opacity-0 group-hover:opacity-100 transition-all"
-                  style={{ background: 'rgba(200,60,60,0.10)', color: 'rgba(220,100,100,0.65)', borderRadius: '3px' }}
+                  className="p-1 opacity-0 group-hover:opacity-100 transition-all duration-100"
+                  style={{ background: '#fff', color: C.red, border: '1.5px solid ' + C.red }}
                   title="إزالة">
                   <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -604,28 +595,21 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
       !!(document as any).webkitFullscreenElement
 
     if (!isFs) {
-      // On iOS Safari, requestFullscreen on a div doesn't work.
-      // For Drive (video element), use the video's native fullscreen.
-      // For YouTube (iframe), try container then iframe.
       const vid = videoRef.current
       const container = videoContainerRef.current
       const iframe = playerRef.current
 
       if (room?.currentSource === 'drive' && vid) {
-        // Native video fullscreen (works on all mobile browsers)
         if (vid.requestFullscreen) {
           vid.requestFullscreen().catch(() => {})
         } else if ((vid as any).webkitEnterFullscreen) {
-          // iOS Safari native video fullscreen
           ;(vid as any).webkitEnterFullscreen()
         } else if ((vid as any).webkitRequestFullscreen) {
           ;(vid as any).webkitRequestFullscreen()
         }
       } else if (container) {
-        // YouTube: try container fullscreen
         if (container.requestFullscreen) {
           container.requestFullscreen().catch(() => {
-            // Fallback: try iframe
             if (iframe?.requestFullscreen) iframe.requestFullscreen().catch(() => {})
             else if ((iframe as any)?.webkitRequestFullscreen) (iframe as any).webkitRequestFullscreen()
           })
@@ -728,7 +712,6 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
   }, [room?.currentVideo, room?.currentSource])
 
   // Keep --app-height CSS variable in sync with the visual viewport
-  // (respects the keyboard on mobile without touching inline styles on .room-layout)
   useEffect(() => {
     if (typeof window === 'undefined') return
     const vv = (window as any).visualViewport
@@ -757,7 +740,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
   }, [])
 
   return (
-    <div className={`room-layout flex flex-col md:flex-row fixed inset-0 overflow-hidden bg-background ${isChatFocused ? 'is-chat-focused' : ''}`} style={{ height: 'var(--app-height)' }}>
+    <div className={`room-layout flex flex-col md:flex-row fixed inset-0 overflow-hidden ${isChatFocused ? 'is-chat-focused' : ''}`} style={{ height: 'var(--app-height)', background: '#4FC3F7' }}>
 
       {/* ── Main area (desktop: flex-col flex-1; mobile: just video+controls) ── */}
       <div className="flex flex-col min-w-0 flex-1 md:flex-1 min-h-0">
@@ -765,9 +748,9 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
         {/* Header */}
         <header className="flex items-center justify-between px-4 py-3 flex-shrink-0"
           style={{
-            backdropFilter: 'blur(20px)',
-            background: 'rgba(8,10,20,0.88)',
-            borderBottom: '1px solid rgba(200,170,100,0.09)',
+            background: C.bgGlass,
+            borderBottom: '3px solid ' + C.border,
+            backdropFilter: 'blur(12px)',
           }}>
           <div className="flex items-center gap-2.5">
             <button onClick={() => router.push('/')} className="btn-ghost p-2 -ml-2" title="Leave Room">
@@ -777,24 +760,30 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
             </button>
             <div className="w-7 h-7 flex items-center justify-center flex-shrink-0"
               style={{
-                background: 'rgba(10,12,22,0.95)',
-                border: '1px solid rgba(200,160,60,0.28)',
-                borderRadius: '4px',
+                background: C.gold,
+                border: '2px solid ' + C.border,
               }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="rgba(210,170,80,0.85)"><path d="M8 5v14l11-7z"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill={C.dark}><path d="M8 5v14l11-7z"/></svg>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="font-semibold text-sm hidden sm:inline" style={{ color: C.text90, fontFamily: 'var(--font-playfair)' }}>Watch Party</span>
-              <span className="text-sm hidden sm:inline" style={{ color: C.text30 }}>/</span>
-              <span className="text-sm font-mono" style={{ color: C.text50 }}>{slug}</span>
+              <span className="font-bold text-sm hidden sm:inline text-pixel" style={{ color: C.dark, fontFamily: 'var(--font-pixel)' }}>Watch Party</span>
+              <span className="text-sm hidden sm:inline" style={{ color: C.textFaint }}>/</span>
+              <span className="text-sm font-mono" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)' }}>{slug}</span>
               {room?.isHost && <span className="badge-host text-[10px] sm:text-xs">★ Host</span>}
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5">
-              <span className={`h-1.5 w-1.5 rounded-full ${connected ? 'bg-green-400 animate-pulse-glow' : 'bg-red-400'}`} />
-              <span className="text-xs hidden sm:inline" style={{ color: C.text30 }}>{connected ? 'Live' : 'Offline'}</span>
+              <span style={{
+                display: 'inline-block',
+                width: 6,
+                height: 6,
+                background: connected ? C.green : C.red,
+                border: '1.5px solid ' + C.border,
+                animation: connected ? 'pulseGlow 2.2s ease-in-out infinite' : 'none',
+              }} />
+              <span className="text-xs hidden sm:inline" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)' }}>{connected ? 'Live' : 'Offline'}</span>
             </div>
             <button id="invite-btn" onClick={copyInvite} className="btn-ghost flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5">
               {copyMsg
@@ -806,8 +795,8 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
             {/* Logout */}
             {session && (
               <button id="logout-room-btn" onClick={() => signOut({ callbackUrl: '/login' })} title="Sign Out"
-                className="w-8 h-8 flex items-center justify-center transition-all duration-200"
-                style={{ background: 'rgba(200,60,60,0.08)', border: '1px solid rgba(200,60,60,0.20)', color: 'rgba(220,100,100,0.65)', borderRadius: '4px' }}>
+                className="w-8 h-8 flex items-center justify-center transition-all duration-100"
+                style={{ background: '#fff', border: '2px solid ' + C.red, color: C.red, boxShadow: C.shadowSm }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                   <polyline points="16 17 21 12 16 7"/>
@@ -830,12 +819,12 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
           {!room?.currentVideo && (
             <div className="text-center space-y-4 px-6">
               <div className="w-20 h-20 flex items-center justify-center mx-auto"
-                style={{ background: 'rgba(200,165,60,0.04)', border: '1px solid rgba(200,170,100,0.10)', borderRadius: '6px' }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(200,170,100,0.18)" strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                style={{ background: C.offWhite, border: '2px solid ' + C.border, boxShadow: C.shadow }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,46,0.18)" strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               </div>
               <div>
-                <p className="text-base font-medium" style={{ color: C.text30, fontFamily: 'var(--font-playfair)' }}>No video selected</p>
-                <p className="text-sm mt-1" style={{ color: C.text20 }}>
+                <p className="text-base font-bold" style={{ color: C.textFaded, fontFamily: 'var(--font-pixel)', fontSize: '0.7rem' }}>No video selected</p>
+                <p className="text-sm mt-1" style={{ color: C.textFaint }}>
                   {room?.isHost ? 'اضغط على YouTube أو Drive' : 'أضف مقطع للطابور أو انتظر الهوست'}
                 </p>
               </div>
@@ -862,14 +851,14 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
           {room?.currentVideo && room.currentSource === 'drive' && (
             <video key={room.currentVideo} ref={videoRef}
               src={`${SERVER}/api/rooms/${slug}/stream`}
-              controls={!!room.isHost} className={`w-full h-full ${!room.isHost ? 'pointer-events-none' : ''}`}
+              controls className="w-full h-full"
               playsInline
               onPlay={handlePlay} onPause={handlePause} onSeeked={handleSeeked} />
            )}
            {/* Expand/collapse button */}
            <button onClick={() => setIsVideoExpanded(!isVideoExpanded)} title={isVideoExpanded ? 'تصغير الفيديو' : 'تكبير الفيديو'}
-            className="absolute bottom-3 right-14 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-200 z-20"
-            style={{ background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(200,170,100,0.22)', color: C.text70, backdropFilter: 'blur(8px)', borderRadius: '6px', pointerEvents: 'auto' }}>
+            className="absolute bottom-3 right-14 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-100 z-20"
+            style={{ background: C.dark, border: '2px solid ' + C.border, color: C.gold, pointerEvents: 'auto' }}>
             {isVideoExpanded
               ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
               : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
@@ -878,8 +867,8 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
 
            {/* Fullscreen button */}
            <button onClick={toggleFullscreen} title={isFullscreen ? 'تصغير' : 'تكبير'}
-            className="absolute bottom-3 right-3 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-200 z-20"
-            style={{ background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(200,170,100,0.22)', color: C.text70, backdropFilter: 'blur(8px)', borderRadius: '6px', pointerEvents: 'auto' }}>
+            className="absolute bottom-3 right-3 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-100 z-20"
+            style={{ background: C.dark, border: '2px solid ' + C.border, color: C.gold, pointerEvents: 'auto' }}>
             {isFullscreen
               ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
               : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
@@ -890,19 +879,20 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
         {/* Host Controls */}
         {room?.isHost && (
           <div className="host-controls flex-shrink-0 p-3 md:p-4"
-            style={{ backdropFilter: 'blur(20px)', background: 'rgba(8,10,20,0.85)', borderTop: '1px solid rgba(200,170,100,0.08)' }}>
+            style={{ background: C.bgGlass, borderTop: '3px solid ' + C.border, backdropFilter: 'blur(12px)' }}>
             <div className="flex gap-2">
               <button id="youtube-picker-btn" onClick={() => setShowYouTubeModal(true)}
-                className="flex items-center gap-2 px-3 md:px-4 py-2.5 font-medium text-sm flex-1 transition-all duration-200"
-                style={{ background: 'rgba(255,0,0,0.08)', border: '1px solid rgba(255,0,0,0.20)', color: 'rgba(255,130,130,0.85)', borderRadius: '4px' }}>
+                className="flex items-center gap-2 px-3 md:px-4 py-2.5 font-bold text-sm flex-1 transition-all duration-100"
+                style={{ background: '#fff', border: '2px solid ' + C.border, color: C.dark, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" fill="rgba(255,80,80,0.80)"/>
+                  <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" fill="#FF5252"/>
                   <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white"/>
                 </svg>
                 <span>YouTube</span>
               </button>
               <button onClick={() => setShowDriveBrowser(true)}
-                className="btn-secondary px-3 md:px-5 flex-shrink-0 flex items-center gap-2">
+                className="flex items-center gap-2 px-3 md:px-5 flex-shrink-0 font-bold text-sm transition-all duration-100"
+                style={{ background: C.teal, border: '2px solid ' + C.border, color: C.dark, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
                 <svg width="15" height="15" viewBox="0 0 87.3 78" fill="none">
                   <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0a15.4 15.4 0 0 0 2.1 7.85l4.5-6z" fill="#0066da" transform="scale(0.8)"/>
                   <path d="M43.65 25L29.9 1.2a15.4 15.4 0 0 0-3.3 3.3L2.1 45.5A15.35 15.35 0 0 0 0 53.0h27.5L43.65 25z" fill="#00ac47" transform="scale(0.8)"/>
@@ -920,10 +910,10 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
          {/* Non-host: add to queue */}
          {!room?.isHost && room !== null && (
            <div className="host-controls flex-shrink-0 px-3 pb-3 pt-2"
-             style={{ backdropFilter: 'blur(20px)', background: 'rgba(8,10,20,0.82)', borderTop: '1px solid rgba(200,170,100,0.07)' }}>
+             style={{ background: C.bgGlass, borderTop: '2px solid ' + C.border, backdropFilter: 'blur(12px)' }}>
              <button onClick={() => setShowYouTubeModal(true)}
-               className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium tracking-wide transition-all"
-               style={{ background: C.goldFaint, border: '1px solid ' + C.goldBorder, color: C.gold, borderRadius: '4px' }}>
+               className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold tracking-wide transition-all duration-100"
+               style={{ background: C.gold, border: '2px solid ' + C.border, color: C.dark, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                أضف مقطع للطابور
              </button>
@@ -932,17 +922,17 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
 
          {/* ── Mobile chat area ── */}
          <div className="md:hidden flex flex-col flex-1 overflow-hidden min-h-0"
-           style={{ background: 'rgba(8,10,20,0.97)' }}>
-           <div className="flex flex-shrink-0" style={{ borderBottom: '1px solid rgba(200,170,100,0.07)' }}>
+           style={{ background: C.white }}>
+           <div className="flex flex-shrink-0" style={{ borderBottom: '2px solid ' + C.border }}>
              {(['chat', 'queue'] as const).map((t) => (
                <button key={t} onClick={() => setSidebarTab(t)}
-                 className="flex-1 py-2.5 text-xs font-semibold uppercase tracking-widest transition-all relative"
+                 className="flex-1 py-2.5 text-xs font-bold uppercase tracking-widest transition-all relative"
                  style={sidebarTab === t
-                   ? { color: C.gold, background: C.goldFaint }
-                   : { color: C.text30, background: 'transparent' }
+                   ? { color: C.dark, background: C.gold, fontFamily: 'var(--font-mono)' }
+                   : { color: C.textFaded, background: C.offWhite, fontFamily: 'var(--font-mono)' }
                  }>
                  {t === 'chat' ? 'Chat' : `Queue${queue.length > 0 ? ` (${queue.length})` : ''}`}
-                 {sidebarTab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: C.gold, opacity: 0.60 }} />}
+                 {sidebarTab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: C.border }} />}
                </button>
              ))}
            </div>
@@ -952,10 +942,10 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
               <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin" style={{ minHeight: 0 }}>
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center space-y-2 py-6">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(200,170,100,0.10)" strokeWidth="1.5">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,46,0.10)" strokeWidth="1.5">
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                     </svg>
-                    <p className="text-xs" style={{ color: C.text20 }}>No messages yet. Say hi!</p>
+                    <p className="text-xs" style={{ color: C.textFaint, fontFamily: 'var(--font-mono)' }}>No messages yet. Say hi!</p>
                   </div>
                 )}
                 {messages.map((msg) => {
@@ -964,13 +954,13 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
                     <div key={msg.id} className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                       <div className="w-6 h-6 avatar text-[10px] self-end flex-shrink-0">{msg.userName?.[0]?.toUpperCase()}</div>
                       <div className={`max-w-[80%] space-y-0.5 flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                        <span className="text-xs px-1" style={{ color: C.text30, textAlign: isOwn ? 'right' : 'left' }}>
+                        <span className="text-xs px-1" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)', textAlign: isOwn ? 'right' : 'left' }}>
                           {isOwn ? 'You' : msg.userName}
                         </span>
                         <div className="px-3 py-2 text-sm leading-relaxed"
                           style={isOwn
-                            ? { background: 'linear-gradient(135deg, hsl(38 62% 42%), hsl(38 66% 50%))', color: 'hsl(220 22% 10%)', borderRadius: '12px 12px 3px 12px' }
-                            : { background: 'rgba(255,255,255,0.05)', color: C.text70, border: '1px solid rgba(200,170,100,0.08)', borderRadius: '12px 12px 12px 3px' }
+                            ? { background: C.gold, color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)' }
+                            : { background: C.offWhite, color: C.dark, border: '2px solid ' + C.border, fontFamily: 'var(--font-mono)' }
                           }>
                           {msg.message}
                         </div>
@@ -981,11 +971,11 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
                 {typingUsers.length > 0 && (
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 avatar text-[10px] flex-shrink-0" style={{ opacity: 0.5 }}>{typingUsers[0]?.[0]?.toUpperCase()}</div>
-                    <div className="px-3 py-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(200,170,100,0.07)', borderRadius: '12px 12px 12px 3px' }}>
+                    <div className="px-3 py-2" style={{ background: C.offWhite, border: '2px solid ' + C.border }}>
                       <div className="flex gap-1 items-center h-4">
                         {[0, 150, 300].map((delay) => (
-                          <span key={delay} className="w-1.5 h-1.5 rounded-full animate-bounce"
-                            style={{ background: C.gold, opacity: 0.45, animationDelay: `${delay}ms` }} />
+                          <span key={delay} className="w-1.5 h-1.5 animate-bounce"
+                            style={{ background: C.gold, border: '1px solid ' + C.border, animationDelay: `${delay}ms` }} />
                         ))}
                       </div>
                     </div>
@@ -993,7 +983,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
                 )}
                 <div ref={chatEndRef} />
               </div>
-              <div id="chat-input-bar" className="p-3 flex-shrink-0 chat-input-area chat-input-bar" style={{ borderTop: '1px solid rgba(200,170,100,0.07)' }}>
+              <div id="chat-input-bar" className="p-3 flex-shrink-0 chat-input-area chat-input-bar" style={{ borderTop: '2px solid ' + C.border }}>
                 <form onSubmit={sendMessage} className="flex gap-2">
                   <input 
                     id="chat-input-mobile" 
@@ -1005,9 +995,9 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
                     className="input-field flex-1 py-2" 
                   />
                   <button id="send-message-btn-mobile" type="submit" disabled={!chatInput.trim()}
-                    className="w-9 h-9 flex items-center justify-center transition-all duration-200 flex-shrink-0 disabled:opacity-35"
-                    style={{ background: 'linear-gradient(135deg, hsl(38 62% 42%), hsl(38 66% 50%))', borderRadius: '4px' }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="hsl(220 22% 10%)" strokeWidth="2.5">
+                    className="w-9 h-9 flex items-center justify-center transition-all duration-100 flex-shrink-0 disabled:opacity-35"
+                    style={{ background: C.gold, border: '2px solid ' + C.border }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.dark} strokeWidth="2.5">
                       <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                     </svg>
                   </button>
@@ -1035,21 +1025,21 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
       <aside
         className="hidden md:flex md:w-80 md:flex-col"
         style={{
-          borderLeft: '1px solid rgba(200,170,100,0.08)',
-          background: 'rgba(8,10,20,0.97)',
+          borderLeft: '3px solid ' + C.border,
+          background: C.white,
         }}>
 
          <div className="flex items-center justify-between px-4 py-3 md:hidden flex-shrink-0"
-           style={{ borderBottom: '1px solid rgba(200,170,100,0.08)', background: 'rgba(5,7,15,0.95)' }}>
-           <span className="text-sm font-semibold" style={{ color: C.text70, fontFamily: 'var(--font-playfair)' }}>Watch Party</span>
+           style={{ borderBottom: '2px solid ' + C.border, background: C.offWhite }}>
+           <span className="text-sm font-bold" style={{ color: C.dark, fontFamily: 'var(--font-pixel)' }}>Watch Party</span>
          </div>
 
         {/* Participants */}
-        <div className="p-4 flex-shrink-0" style={{ borderBottom: '1px solid rgba(200,170,100,0.07)' }}>
+        <div className="p-4 flex-shrink-0" style={{ borderBottom: '2px solid ' + C.border }}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold uppercase tracking-widest" style={{ color: C.text30, letterSpacing: '0.10em' }}>Participants</h3>
-            <span className="text-xs px-2 py-0.5 font-semibold"
-              style={{ background: 'rgba(255,255,255,0.05)', color: C.text50, border: '1px solid rgba(255,255,255,0.07)', borderRadius: '3px' }}>
+            <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)' }}>Participants</h3>
+            <span className="text-xs px-2 py-0.5 font-bold"
+              style={{ background: C.lightGray, color: C.textFaded, border: '2px solid ' + C.border, fontFamily: 'var(--font-mono)' }}>
               {participants.length}
             </span>
           </div>
@@ -1057,7 +1047,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
             {participants.map((p) => (
               <div key={p.user.id} className="flex items-center gap-2.5">
                 <div className="w-6 h-6 avatar text-[10px]">{p.user.name?.[0]?.toUpperCase()}</div>
-                <div className="flex-1 min-w-0"><p className="text-sm truncate" style={{ color: C.text70 }}>{p.user.name}</p></div>
+                <div className="flex-1 min-w-0"><p className="text-sm truncate font-semibold" style={{ color: C.dark, fontFamily: 'var(--font-mono)' }}>{p.user.name}</p></div>
                 {p.user.id === room?.hostId && (
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="2">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
@@ -1065,21 +1055,21 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
                 )}
               </div>
             ))}
-            {participants.length === 0 && <p className="text-xs" style={{ color: C.text20 }}>No participants yet...</p>}
+            {participants.length === 0 && <p className="text-xs" style={{ color: C.textFaint, fontFamily: 'var(--font-mono)' }}>No participants yet...</p>}
           </div>
         </div>
 
         {/* Tab switcher */}
-        <div className="flex flex-shrink-0" style={{ borderBottom: '1px solid rgba(200,170,100,0.07)' }}>
+        <div className="flex flex-shrink-0" style={{ borderBottom: '2px solid ' + C.border }}>
           {(['chat', 'queue'] as const).map((t) => (
             <button key={t} onClick={() => setSidebarTab(t)}
-              className="flex-1 py-2.5 text-xs font-semibold uppercase tracking-widest transition-all relative"
+              className="flex-1 py-2.5 text-xs font-bold uppercase tracking-widest transition-all relative"
               style={sidebarTab === t
-                ? { color: C.gold, background: C.goldFaint }
-                : { color: C.text30, background: 'transparent' }
+                ? { color: C.dark, background: C.gold, fontFamily: 'var(--font-mono)' }
+                : { color: C.textFaded, background: C.offWhite, fontFamily: 'var(--font-mono)' }
               }>
               {t === 'chat' ? 'Chat' : `Queue${queue.length > 0 ? ` (${queue.length})` : ''}`}
-              {sidebarTab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: C.gold, opacity: 0.60 }} />}
+              {sidebarTab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: C.border }} />}
             </button>
           ))}
         </div>
@@ -1090,10 +1080,10 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
             <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin" style={{ minHeight: 0 }}>
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-2 py-8">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(200,170,100,0.10)" strokeWidth="1.5">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,46,0.10)" strokeWidth="1.5">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                   </svg>
-                  <p className="text-xs" style={{ color: C.text20 }}>No messages yet. Say hi!</p>
+                  <p className="text-xs" style={{ color: C.textFaint, fontFamily: 'var(--font-mono)' }}>No messages yet. Say hi!</p>
                 </div>
               )}
               {messages.map((msg) => {
@@ -1102,13 +1092,13 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
                   <div key={msg.id} className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
                     <div className="w-6 h-6 avatar text-[10px] self-end flex-shrink-0">{msg.userName?.[0]?.toUpperCase()}</div>
                     <div className={`max-w-[80%] space-y-0.5 flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                      <span className="text-xs px-1" style={{ color: C.text30, textAlign: isOwn ? 'right' : 'left' }}>
+                      <span className="text-xs px-1" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)', textAlign: isOwn ? 'right' : 'left' }}>
                         {isOwn ? 'You' : msg.userName}
                       </span>
                       <div className="px-3 py-2 text-sm leading-relaxed"
                         style={isOwn
-                          ? { background: 'linear-gradient(135deg, hsl(38 62% 42%), hsl(38 66% 50%))', color: 'hsl(220 22% 10%)', borderRadius: '12px 12px 3px 12px' }
-                          : { background: 'rgba(255,255,255,0.05)', color: C.text70, border: '1px solid rgba(200,170,100,0.08)', borderRadius: '12px 12px 12px 3px' }
+                          ? { background: C.gold, color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)' }
+                          : { background: C.offWhite, color: C.dark, border: '2px solid ' + C.border, fontFamily: 'var(--font-mono)' }
                         }>
                         {msg.message}
                       </div>
@@ -1119,11 +1109,11 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
               {typingUsers.length > 0 && (
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 avatar text-[10px] flex-shrink-0" style={{ opacity: 0.5 }}>{typingUsers[0]?.[0]?.toUpperCase()}</div>
-                  <div className="px-3 py-2" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(200,170,100,0.07)', borderRadius: '12px 12px 12px 3px' }}>
+                  <div className="px-3 py-2" style={{ background: C.offWhite, border: '2px solid ' + C.border }}>
                     <div className="flex gap-1 items-center h-4">
                       {[0, 150, 300].map((delay) => (
-                        <span key={delay} className="w-1.5 h-1.5 rounded-full animate-bounce"
-                          style={{ background: C.gold, opacity: 0.45, animationDelay: `${delay}ms` }} />
+                        <span key={delay} className="w-1.5 h-1.5 animate-bounce"
+                          style={{ background: C.gold, border: '1px solid ' + C.border, animationDelay: `${delay}ms` }} />
                       ))}
                     </div>
                   </div>
@@ -1131,7 +1121,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
               )}
               <div ref={chatEndRef} />
             </div>
-            <div id="chat-input-bar" className="p-3 flex-shrink-0 chat-input-bar" style={{ borderTop: '1px solid rgba(200,170,100,0.07)' }}>
+            <div id="chat-input-bar" className="p-3 flex-shrink-0 chat-input-bar" style={{ borderTop: '2px solid ' + C.border }}>
               <form onSubmit={sendMessage} className="flex gap-2">
                 <input 
                   id="chat-input" 
@@ -1143,9 +1133,9 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
                   className="input-field flex-1 py-2" 
                 />
                 <button id="send-message-btn" type="submit" disabled={!chatInput.trim()}
-                  className="w-9 h-9 flex items-center justify-center transition-all duration-200 flex-shrink-0 disabled:opacity-35"
-                  style={{ background: 'linear-gradient(135deg, hsl(38 62% 42%), hsl(38 66% 50%))', borderRadius: '4px' }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="hsl(220 22% 10%)" strokeWidth="2.5">
+                  className="w-9 h-9 flex items-center justify-center transition-all duration-100 flex-shrink-0 disabled:opacity-35"
+                  style={{ background: C.gold, border: '2px solid ' + C.border }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.dark} strokeWidth="2.5">
                     <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                   </svg>
                 </button>

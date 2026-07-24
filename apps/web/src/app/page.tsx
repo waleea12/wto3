@@ -5,10 +5,10 @@ import { useState } from 'react'
 import axios from 'axios'
 
 const FEATURES = [
-  { icon: '▶', label: 'YouTube' },
+  { icon: '★', label: 'YouTube' },
   { icon: '☁', label: 'Google Drive' },
-  { icon: '✦', label: 'Live Chat' },
-  { icon: '⟳', label: 'Real-time Sync' },
+  { icon: '◆', label: 'Live Chat' },
+  { icon: '↻', label: 'Real-time Sync' },
 ]
 
 export default function HomePage() {
@@ -44,47 +44,77 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
-      {/* Subtle background texture */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(200,160,60,0.18), transparent)' }} />
-        <div className="absolute bottom-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(200,160,60,0.10), transparent)' }} />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full"
-          style={{ background: 'radial-gradient(ellipse, rgba(180,140,50,0.04) 0%, transparent 70%)' }} />
+      {/* Background decorations — clouds */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        {/* Pixel clouds */}
+        <div className="absolute top-[10%] left-[12%] animate-pixel-float" style={{ animationDelay: '0s' }}>
+          <div className="w-20 h-8 bg-white border-2 border-[#1a1a2e]" style={{ boxShadow: '4px 4px 0 #1a1a2e' }}>
+            <div className="w-10 h-5 bg-white border-2 border-[#1a1a2e] absolute -top-3 left-3" />
+            <div className="w-8 h-5 bg-white border-2 border-[#1a1a2e] absolute -top-3 right-3" />
+          </div>
+        </div>
+        <div className="absolute top-[18%] right-[15%] animate-pixel-float" style={{ animationDelay: '1s' }}>
+          <div className="w-16 h-7 bg-white border-2 border-[#1a1a2e]" style={{ boxShadow: '4px 4px 0 #1a1a2e' }}>
+            <div className="w-8 h-4 bg-white border-2 border-[#1a1a2e] absolute -top-2 left-2" />
+            <div className="w-7 h-4 bg-white border-2 border-[#1a1a2e] absolute -top-2 right-2" />
+          </div>
+        </div>
+        <div className="absolute top-[25%] left-[60%] animate-pixel-float" style={{ animationDelay: '2s' }}>
+          <div className="w-24 h-9 bg-white border-2 border-[#1a1a2e]" style={{ boxShadow: '4px 4px 0 #1a1a2e' }}>
+            <div className="w-12 h-6 bg-white border-2 border-[#1a1a2e] absolute -top-3 left-4" />
+            <div className="w-10 h-6 bg-white border-2 border-[#1a1a2e] absolute -top-3 right-3" />
+          </div>
+        </div>
+        {/* Pixel trees */}
+        <div className="absolute bottom-[18%] left-[8%]" style={{ zIndex: 1 }}>
+          <div className="w-2 h-8 bg-[#795548] mx-auto" />
+          <div className="w-10 h-12 -mt-2 relative">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-8 bg-[#4CAF50] border-2 border-[#1a1a2e]" />
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-10 h-8 bg-[#388E3C] border-2 border-[#1a1a2e]" />
+          </div>
+        </div>
+        <div className="absolute bottom-[18%] right-[10%]" style={{ zIndex: 1 }}>
+          <div className="w-2 h-8 bg-[#795548] mx-auto" />
+          <div className="w-10 h-12 -mt-2 relative">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-8 bg-[#4CAF50] border-2 border-[#1a1a2e]" />
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 w-10 h-8 bg-[#388E3C] border-2 border-[#1a1a2e]" />
+          </div>
+        </div>
       </div>
 
-      <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-9">
+      <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-8">
 
         {/* ── Hero ──────────────────────────────── */}
         <div className="text-center space-y-5 animate-fade-in-up">
-          {/* Monogram / logo */}
+          {/* Logo */}
           <div className="flex flex-col items-center gap-3">
             <div
-              className="w-14 h-14 flex items-center justify-center rounded-full"
+              className="w-16 h-16 flex items-center justify-center"
               style={{
-                background: 'rgba(10,12,22,0.90)',
-                border: '1px solid rgba(200,160,60,0.35)',
-                boxShadow: '0 0 0 6px rgba(200,155,50,0.05), 0 8px 28px rgba(0,0,0,0.5)',
+                background: '#FFC940',
+                border: '3px solid #1a1a2e',
+                boxShadow: '4px 4px 0px #1a1a2e',
               }}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <polygon points="5 3 19 12 5 21 5 3" fill="rgba(210,170,80,0.90)" />
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="#1a1a2e">
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
               </svg>
             </div>
-
-            {/* Thin decorative line */}
-            <div style={{ width: 32, height: 1, background: 'linear-gradient(90deg, transparent, rgba(200,160,60,0.40), transparent)' }} />
           </div>
 
           <div>
             <h1
-              className="text-4xl font-bold tracking-tight leading-none"
-              style={{ fontFamily: 'var(--font-playfair)', color: 'rgba(225,210,175,0.96)' }}
+              className="text-3xl font-bold leading-tight text-pixel"
+              style={{ color: '#1a1a2e', fontSize: '1.35rem', lineHeight: 1.8, fontFamily: 'var(--font-pixel)' }}
             >
               Watch Party
             </h1>
             <p
               className="mt-3 text-sm leading-relaxed"
-              style={{ color: 'rgba(200,185,150,0.50)' }}
+              style={{ color: '#1a1a2e', opacity: 0.7, fontFamily: 'var(--font-mono)' }}
             >
               Watch videos in perfect sync with friends —<br className="hidden sm:block" /> anywhere, anytime.
             </p>
@@ -96,12 +126,12 @@ export default function HomePage() {
           {FEATURES.map((f) => (
             <span
               key={f.label}
-              className="px-3 py-1 text-xs font-medium tracking-wide"
+              className="px-3 py-1 text-xs font-semibold tracking-wide"
               style={{
-                background: 'rgba(200,165,70,0.06)',
-                color: 'rgba(200,180,130,0.52)',
-                border: '1px solid rgba(200,160,60,0.12)',
-                borderRadius: '3px',
+                background: '#fff',
+                color: '#1a1a2e',
+                border: '2px solid #1a1a2e',
+                fontFamily: 'var(--font-mono)',
                 letterSpacing: '0.05em',
               }}
             >
@@ -110,29 +140,34 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* ── Card ──────────────────────────────── */}
-        <div
-          className="w-full p-6 space-y-4"
-          style={{
-            background: 'rgba(12, 15, 26, 0.82)',
-            border: '1px solid rgba(200,170,100,0.13)',
-            borderRadius: '6px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.03)',
-          }}
-        >
-          {/* Top inner border accent */}
-          <div className="divider-gold -mx-6 -mt-6 mb-5" style={{ opacity: 0.6, borderRadius: '6px 6px 0 0' }} />
+        {/* ── Card with pixel-window style ──────── */}
+        <div className="pixel-window w-full p-6 space-y-5" style={{ position: 'relative' }}>
+          {/* Title bar */}
+          <div className="pixel-window-titlebar -mx-6 -mt-6 mb-0" style={{ borderBottom: '3px solid #1a1a2e' }}>
+            <div className="pixel-dot pixel-dot-red" />
+            <div className="pixel-dot pixel-dot-yellow" />
+            <div className="pixel-dot pixel-dot-green" />
+            <span style={{
+              fontSize: '9px',
+              fontFamily: 'var(--font-pixel)',
+              color: '#1a1a2e',
+              opacity: 0.6,
+              marginLeft: 8,
+            }}>
+              watchparty.exe
+            </span>
+          </div>
 
           {!session ? (
-            <div className="space-y-4">
+            <div className="space-y-4 pt-2">
               <div className="text-center space-y-1">
                 <h2
-                  className="text-lg font-semibold"
-                  style={{ fontFamily: 'var(--font-playfair)', color: 'rgba(220,205,170,0.95)' }}
+                  className="text-lg font-bold"
+                  style={{ fontFamily: 'var(--font-pixel)', color: '#1a1a2e', fontSize: '0.85rem' }}
                 >
                   Get Started
                 </h2>
-                <p className="text-sm" style={{ color: 'rgba(200,185,150,0.40)' }}>
+                <p className="text-sm" style={{ color: '#1a1a2e', opacity: 0.55, fontFamily: 'var(--font-mono)' }}>
                   Sign in to create or join a room
                 </p>
               </div>
@@ -141,46 +176,54 @@ export default function HomePage() {
                 onClick={() => router.push('/login')}
                 className="btn-primary w-full py-3"
               >
-                Sign In / Register
+                ⚡ Sign In / Register
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 pt-2">
               {/* User info */}
               <div
                 className="flex items-center gap-3 p-3"
                 style={{
-                  background: 'rgba(200,165,60,0.05)',
-                  border: '1px solid rgba(200,160,60,0.13)',
-                  borderRadius: '4px',
+                  background: '#f9f9f9',
+                  border: '2px solid #1a1a2e',
                 }}
               >
                 <div className="w-9 h-9 avatar text-sm">
                   {session.user.name?.[0]?.toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: 'rgba(225,210,175,0.90)' }}>
+                  <p className="text-sm font-bold truncate" style={{ color: '#1a1a2e', fontFamily: 'var(--font-mono)' }}>
                     {session.user.name}
                   </p>
-                  <p className="text-xs truncate" style={{ color: 'rgba(200,185,150,0.40)' }}>
+                  <p className="text-xs truncate" style={{ color: '#1a1a2e', opacity: 0.5, fontFamily: 'var(--font-mono)' }}>
                     {session.user.email}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-glow flex-shrink-0" />
+                  <div className="w-2 h-2 flex-shrink-0" style={{ background: '#28C840', border: '1.5px solid #1a1a2e', animation: 'pulseGlow 2.2s ease-in-out infinite' }} />
                   <button
                     id="logout-btn"
                     onClick={() => signOut({ callbackUrl: '/login' })}
                     title="Sign Out"
-                    className="w-7 h-7 flex items-center justify-center transition-all duration-200 flex-shrink-0"
+                    className="w-8 h-8 flex items-center justify-center transition-all duration-100 flex-shrink-0"
                     style={{
-                      background: 'rgba(200,60,60,0.10)',
-                      border: '1px solid rgba(200,60,60,0.22)',
-                      color: 'rgba(220,100,100,0.70)',
-                      borderRadius: '4px',
+                      background: '#fff',
+                      border: '2px solid #FF5F57',
+                      color: '#FF5F57',
+                      boxShadow: '2px 2px 0px #1a1a2e',
+                      fontFamily: 'var(--font-mono)',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translate(1px, 1px)';
+                      e.currentTarget.style.boxShadow = '1px 1px 0px #1a1a2e';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translate(0, 0)';
+                      e.currentTarget.style.boxShadow = '2px 2px 0px #1a1a2e';
                     }}
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                       <polyline points="16 17 21 12 16 7"/>
                       <line x1="21" y1="12" x2="9" y2="12"/>
@@ -202,25 +245,25 @@ export default function HomePage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                     </svg>
-                    Creating Room...
+                    Creating...
                   </>
                 ) : (
                   <>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
-                    Create New Room
+                    ⭐ Create New Room
                   </>
                 )}
               </button>
 
               {/* Divider */}
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px" style={{ background: 'rgba(200,165,70,0.10)' }} />
-                <span className="text-[11px] font-medium tracking-widest uppercase" style={{ color: 'rgba(200,175,120,0.30)' }}>
+                <div className="flex-1" style={{ height: 2, background: '#1a1a2e', opacity: 0.15 }} />
+                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#1a1a2e', opacity: 0.4, fontFamily: 'var(--font-mono)' }}>
                   or join
                 </span>
-                <div className="flex-1 h-px" style={{ background: 'rgba(200,165,70,0.10)' }} />
+                <div className="flex-1" style={{ height: 2, background: '#1a1a2e', opacity: 0.15 }} />
               </div>
 
               {/* Join room */}
@@ -237,7 +280,7 @@ export default function HomePage() {
                   type="submit"
                   className="btn-secondary px-4 py-2.5 flex-shrink-0"
                 >
-                  Join
+                  → Join
                 </button>
               </form>
             </div>
@@ -245,7 +288,7 @@ export default function HomePage() {
         </div>
 
         {/* Footer */}
-        <p className="text-[11px] text-center tracking-wide" style={{ color: 'rgba(200,185,150,0.18)' }}>
+        <p className="text-[10px] text-center tracking-wide" style={{ color: '#1a1a2e', opacity: 0.25, fontFamily: 'var(--font-mono)' }}>
           Powered by Next.js · Socket.io · PostgreSQL
         </p>
       </div>

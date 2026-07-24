@@ -10,8 +10,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-source-sans)', 'system-ui', 'sans-serif'],
-        serif: ['var(--font-playfair)', 'Georgia', 'serif'],
+        sans: ['var(--font-mono)', '"JetBrains Mono"', 'monospace'],
+        pixel: ['var(--font-pixel)', '"Press Start 2P"', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',

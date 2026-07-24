@@ -2,40 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+/* ═══════════════════════════════════════════════════════════════
+   PIXEL ART / RETRO GAMING THEME
+   Inspired by ditto.dev
+   ═══════════════════════════════════════════════════════════════ */
 
 @layer base {
   :root {
-    /* Classic dark palette — deep navy / warm black */
-    --background: 220 20% 7%;
-    --foreground: 38 25% 90%;
+    /* Sky blue background */
+    --background: 195 75% 65%;
+    --foreground: 240 12% 12%;
 
-    /* Accent: warm gold */
-    --primary: 38 72% 52%;
-    --primary-foreground: 220 20% 7%;
+    /* Gold/Yellow primary */
+    --primary: 43 100% 55%;
+    --primary-foreground: 240 12% 12%;
 
-    --secondary: 220 18% 12%;
-    --secondary-foreground: 38 20% 82%;
+    /* Teal/Green secondary accent */
+    --secondary: 180 60% 45%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 220 16% 14%;
-    --muted-foreground: 220 10% 52%;
+    --muted: 195 40% 78%;
+    --muted-foreground: 240 8% 30%;
 
-    --accent: 220 16% 16%;
-    --accent-foreground: 38 25% 88%;
+    --accent: 175 55% 55%;
+    --accent-foreground: 240 12% 12%;
 
-    --border: 220 14% 18%;
-    --input: 220 16% 12%;
-    --ring: 38 72% 52%;
+    /* Dark navy borders */
+    --border: 235 20% 18%;
+    --input: 0 0% 100%;
+    --ring: 43 100% 55%;
 
-    --card: 220 18% 9%;
-    --card-foreground: 38 20% 88%;
+    /* White cards */
+    --card: 0 0% 100%;
+    --card-foreground: 240 12% 12%;
 
-    --radius: 0.5rem;
+    --radius: 0px;
   }
 }
 
 :root {
   --app-height: 100vh;
+  --pixel-shadow: 4px 4px 0px #1a1a2e;
+  --pixel-shadow-sm: 3px 3px 0px #1a1a2e;
+  --pixel-shadow-hover: 2px 2px 0px #1a1a2e;
+  --pixel-border: 2px solid #1a1a2e;
+  --pixel-border-thick: 3px solid #1a1a2e;
 }
 
 @supports (height: 100dvh) {
@@ -51,21 +62,34 @@
   }
 
   html {
-    font-family: 'Source Sans 3', system-ui, sans-serif;
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
     position: fixed;
     inset: 0;
     width: 100%;
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply text-foreground antialiased;
+    background-color: #4FC3F7;
     background-image:
-      radial-gradient(ellipse at 30% 0%, rgba(180, 140, 60, 0.04) 0%, transparent 55%),
-      radial-gradient(ellipse at 75% 90%, rgba(30, 40, 70, 0.35) 0%, transparent 55%);
+      /* Pixel clouds */
+      radial-gradient(ellipse 120px 40px at 15% 18%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%),
+      radial-gradient(ellipse 80px 28px at 20% 15%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 70%),
+      radial-gradient(ellipse 140px 48px at 65% 12%, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0) 70%),
+      radial-gradient(ellipse 90px 32px at 72% 10%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0) 70%),
+      radial-gradient(ellipse 100px 36px at 88% 22%, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 70%),
+      radial-gradient(ellipse 70px 24px at 92% 20%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%),
+      radial-gradient(ellipse 110px 38px at 40% 25%, rgba(255,255,255,0.82) 0%, rgba(255,255,255,0) 70%),
+      radial-gradient(ellipse 60px 22px at 45% 22%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%),
+      /* Horizon line */
+      linear-gradient(to bottom, #4FC3F7 0%, #4FC3F7 75%, #8BC34A 75%, #8BC34A 78%, #6B8E23 78%, #6B8E23 80%, #795548 80%, #795548 100%);
     background-attachment: fixed;
+    background-size: 100% 100%;
     position: fixed;
     inset: 0;
     width: 100%;
@@ -78,186 +102,258 @@
     height: 100%;
     overflow: hidden;
   }
+
+  /* Pixel art ground decoration */
+  .pixel-ground {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20%;
+    background: linear-gradient(to bottom, #6B8E23 0%, #795548 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
 }
 
 @layer components {
-  /* ── Glass ────────────────────────────────── */
-  .glass {
-    backdrop-filter: blur(12px);
-    background-color: rgba(15, 18, 28, 0.70);
-    border: 1px solid rgba(200, 170, 100, 0.10);
-  }
-
-  .glass-dark {
-    backdrop-filter: blur(20px);
-    background-color: rgba(8, 10, 18, 0.80);
-    border-bottom: 1px solid rgba(200, 170, 100, 0.08);
-  }
-
-  /* ── Buttons ──────────────────────────────── */
+  /* ── Pixel Button Primary (Gold/Yellow) ───── */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5
-           font-semibold tracking-wide transition-all duration-200 ease-out
+           font-semibold tracking-wide transition-all duration-100 ease-out
            disabled:opacity-40 disabled:cursor-not-allowed;
-    background: linear-gradient(135deg, hsl(38 68% 48%), hsl(38 72% 56%));
-    color: hsl(220, 22%, 8%);
-    border: 1px solid rgba(200, 165, 80, 0.50);
-    border-radius: var(--radius);
+    background: #FFC940;
+    color: #1a1a2e;
+    border: var(--pixel-border-thick);
+    border-radius: 3px;
     letter-spacing: 0.03em;
     font-size: 0.875rem;
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
+    box-shadow: 4px 4px 0px #1a1a2e;
+    transform: translate(0, 0);
+    text-transform: uppercase;
+    cursor: pointer;
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, hsl(38 72% 52%), hsl(38 76% 60%));
-    box-shadow: 0 4px 20px rgba(200, 160, 60, 0.22);
-    transform: translateY(-1px);
+    background: #FFB300;
+    box-shadow: 2px 2px 0px #1a1a2e;
+    transform: translate(2px, 2px);
   }
 
   .btn-primary:active:not(:disabled) {
-    transform: translateY(0);
+    box-shadow: 1px 1px 0px #1a1a2e;
+    transform: translate(3px, 3px);
   }
 
+  /* ── Pixel Button Secondary (Teal/Green) ──── */
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 px-5 py-2.5
-           font-medium tracking-wide transition-all duration-200 ease-out;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(200, 170, 100, 0.18);
-    color: rgba(220, 195, 140, 0.85);
-    border-radius: var(--radius);
+           font-medium tracking-wide transition-all duration-100 ease-out;
+    background: #26C6DA;
+    border: var(--pixel-border-thick);
+    color: #1a1a2e;
+    border-radius: 3px;
     font-size: 0.875rem;
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
+    box-shadow: 4px 4px 0px #1a1a2e;
+    transform: translate(0, 0);
+    text-transform: uppercase;
+    cursor: pointer;
   }
 
   .btn-secondary:hover {
-    background: rgba(200, 165, 80, 0.09);
-    border-color: rgba(200, 170, 100, 0.30);
-    color: rgba(220, 200, 150, 1);
+    background: #00BCD4;
+    box-shadow: 2px 2px 0px #1a1a2e;
+    transform: translate(2px, 2px);
   }
 
+  .btn-secondary:active {
+    box-shadow: 1px 1px 0px #1a1a2e;
+    transform: translate(3px, 3px);
+  }
+
+  /* ── Pixel Ghost Button ───────────────────── */
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 px-3 py-1.5
-           font-medium transition-all duration-200 text-sm;
-    color: rgba(200, 185, 155, 0.50);
-    border-radius: var(--radius);
+           font-medium transition-all duration-100 text-sm;
+    color: #1a1a2e;
+    border-radius: 3px;
+    opacity: 0.7;
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
   }
 
   .btn-ghost:hover {
-    color: rgba(220, 200, 155, 0.82);
-    background-color: rgba(200, 170, 90, 0.08);
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.06);
   }
 
-  /* ── Input ────────────────────────────────── */
+  /* ── Input Field ──────────────────────────── */
   .input-field {
-    @apply w-full px-4 py-2.5 text-base md:text-sm outline-none transition-all duration-200;
-    background: rgba(10, 12, 22, 0.70);
-    border: 1px solid rgba(200, 170, 100, 0.15);
-    color: rgba(225, 210, 175, 0.90);
-    border-radius: var(--radius);
-    font-family: 'Source Sans 3', sans-serif;
+    @apply w-full px-4 py-2.5 text-base md:text-sm outline-none transition-all duration-150;
+    background: #fff;
+    border: var(--pixel-border);
+    color: #1a1a2e;
+    border-radius: 3px;
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
+    box-shadow: inset 2px 2px 0px rgba(0,0,0,0.08);
   }
 
   .input-field::placeholder {
-    color: rgba(200, 185, 150, 0.28);
+    color: #9ca3af;
   }
 
   .input-field:focus {
-    border-color: rgba(200, 160, 60, 0.55);
-    box-shadow: 0 0 0 3px rgba(200, 155, 50, 0.10);
-    background: rgba(12, 14, 25, 0.85);
+    border-color: #FFC940;
+    box-shadow: 0 0 0 3px rgba(255, 201, 64, 0.3), inset 2px 2px 0px rgba(0,0,0,0.05);
+    background: #FFFDEF;
   }
 
-  /* ── Card ─────────────────────────────────── */
+  /* ── Pixel Card (White with dark border + shadow) ── */
   .card {
     @apply overflow-hidden;
-    background: hsl(var(--card));
-    border: 1px solid rgba(200, 170, 100, 0.10);
-    border-radius: var(--radius);
+    background: #fff;
+    border: var(--pixel-border-thick);
+    border-radius: 0px;
+    box-shadow: 6px 6px 0px #1a1a2e;
   }
 
   /* ── Badges ───────────────────────────────── */
   .badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold tracking-wide;
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold tracking-wide;
+    border-radius: 2px;
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
   }
 
   .badge-host {
     @apply badge;
-    background: rgba(200, 160, 60, 0.12);
-    color: hsl(38 72% 70%);
-    border: 1px solid rgba(200, 160, 60, 0.28);
+    background: #FFC940;
+    color: #1a1a2e;
+    border: 2px solid #1a1a2e;
   }
 
   .badge-live {
     @apply badge;
-    background: rgba(34, 197, 94, 0.12);
-    color: #86efac;
-    border: 1px solid rgba(34, 197, 94, 0.22);
+    background: #4ADE80;
+    color: #1a1a2e;
+    border: 2px solid #1a1a2e;
   }
 
   /* ── Sidebar section ──────────────────────── */
   .sidebar-section {
     @apply p-4;
-    border-bottom: 1px solid rgba(200, 170, 100, 0.07);
+    border-bottom: 2px solid #1a1a2e;
   }
 
   /* ── Avatar ───────────────────────────────── */
   .avatar {
-    @apply rounded-full flex items-center justify-center font-bold text-white flex-shrink-0;
-    background: linear-gradient(135deg, hsl(38 58% 38%), hsl(38 55% 28%));
-    color: hsl(38 30% 92%);
+    @apply flex items-center justify-center font-bold text-white flex-shrink-0;
+    background: #FFC940;
+    color: #1a1a2e;
+    border: 2px solid #1a1a2e;
+    border-radius: 0;
+    font-family: var(--font-pixel), 'Press Start 2P', monospace;
+    font-size: 10px;
   }
 
   /* ── Decorative divider ───────────────────── */
   .divider-gold {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(200, 160, 60, 0.22), transparent);
+    height: 2px;
+    background: #1a1a2e;
+  }
+
+  /* ── Pixel Window Container ──────────────── */
+  .pixel-window {
+    background: #fff;
+    border: 3px solid #1a1a2e;
+    border-radius: 0;
+    box-shadow: 6px 6px 0px #1a1a2e;
+    overflow: hidden;
+  }
+
+  .pixel-window-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f0f0f0;
+    border-bottom: 2px solid #1a1a2e;
+  }
+
+  .pixel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 0;
+    border: 2px solid #1a1a2e;
+    flex-shrink: 0;
+  }
+
+  .pixel-dot-red    { background: #FF5F57; }
+  .pixel-dot-yellow { background: #FFBD2E; }
+  .pixel-dot-green  { background: #28C840; }
+
+  /* ── Glass (repurposed for pixel overlays) ── */
+  .glass {
+    background: rgba(255, 255, 255, 0.85);
+    border: var(--pixel-border);
+    box-shadow: 4px 4px 0px #1a1a2e;
+  }
+
+  .glass-dark {
+    background: rgba(255, 255, 255, 0.75);
+    border-bottom: 2px solid #1a1a2e;
   }
 }
 
 @layer utilities {
-  /* Gold gradient text */
-  .text-gold {
-    background: linear-gradient(135deg, hsl(38 72% 60%), hsl(40 80% 72%));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  /* Pixel text */
+  .text-pixel {
+    font-family: var(--font-pixel), 'Press Start 2P', monospace;
+    letter-spacing: -0.02em;
   }
 
-  /* Subtle glow on gold elements */
-  .glow-gold {
-    box-shadow: 0 0 16px rgba(200, 155, 50, 0.18);
+  /* Pixel sharp shadow */
+  .pixel-shadow {
+    box-shadow: 4px 4px 0px #1a1a2e;
+  }
+
+  .pixel-shadow-sm {
+    box-shadow: 3px 3px 0px #1a1a2e;
   }
 
   /* Scrollbar */
   .scrollbar-thin::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.04);
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: rgba(200, 165, 80, 0.15);
-    border-radius: 9999px;
+    background: #1a1a2e;
+    border-radius: 0;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: rgba(200, 165, 80, 0.28);
+    background: #333;
   }
 }
 
 /* ── Global scrollbar ──────────────────────── */
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: hsl(var(--background));
+  background: rgba(0, 0, 0, 0.03);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(200, 165, 80, 0.12);
-  border-radius: 3px;
+  background: #1a1a2e;
+  border-radius: 0;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(200, 165, 80, 0.24);
+  background: #2d2d44;
 }
 
 /* ── Animations ────────────────────────────── */
@@ -267,13 +363,18 @@
 }
 
 @keyframes pulseGlow {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.45; }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(1.15); }
 }
 
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
+}
+
+@keyframes pixelFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-6px); }
 }
 
 .animate-fade-in-up {
@@ -284,18 +385,19 @@
   animation: pulseGlow 2.2s ease-in-out infinite;
 }
 
+.animate-pixel-float {
+  animation: pixelFloat 3s ease-in-out infinite;
+}
+
 /* ── Rave-style mobile layout helpers ────────────────────────────────────── */
-/* .mobile-video-h removed — video height is now set via inline pixel style from JS state */
 
 @media (max-width: 767px) {
-  /* When chat is focused on mobile, INSTANTLY shrink the video to give the chat messages breathing room. */
   .room-layout.is-chat-focused .mobile-video-h {
     height: 12vh;
     min-height: 12vh;
     flex-basis: 12vh;
   }
   
-  /* Hide the host controls to save even more space for chat messages */
   .room-layout.is-chat-focused .host-controls {
     display: none;
   }
@@ -311,20 +413,15 @@
 }
 
 /* ── Mobile keyboard fix ─────────────────────────────────────────────────── */
-/* Prevent the layout from collapsing when the virtual keyboard opens */
-/* Use position: fixed on the main container to keep video pinned at top */
 .mobile-keyboard-fix {
-  /* Prevent iOS Safari from auto-scrolling to the focused input */
   overflow-anchor: none;
 }
 
-/* Smooth movement for the chat input bar when keyboard opens */
 .chat-input-bar {
   transition: transform 0.15s ease-out;
   will-change: transform;
 }
 
-/* On mobile, keep the video area from shrinking when keyboard opens */
 @media (max-width: 767px) {
   .room-layout {
     position: fixed;
@@ -339,8 +436,6 @@
     overscroll-behavior: none;
   }
 
-  /* The keyboard must not make the document scroll. The message list has
-     its own overflow container, so focus only changes that container. */
   .chat-input-area {
     touch-action: manipulation;
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
@@ -350,4 +445,20 @@
   #chat-input {
     scroll-margin: 0;
   }
+}
+
+/* ── Pixel art ground decoration (fixed at bottom) ── */
+body::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20%;
+  background:
+    /* Grass layer */
+    linear-gradient(to bottom, #8BC34A 0%, #6B8E23 5px, #6B8E23 100%);
+  pointer-events: none;
+  z-index: 0;
+  border-top: 3px solid #1a1a2e;
 }

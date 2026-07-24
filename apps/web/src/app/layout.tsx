@@ -1,18 +1,20 @@
 import type { Metadata, Viewport } from 'next'
-import { Playfair_Display, Source_Sans_3 } from 'next/font/google'
+import { Press_Start_2P, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
 
-const playfair = Playfair_Display({
+const pressStart2P = Press_Start_2P({
   subsets: ['latin'],
-  variable: '--font-playfair',
-  weight: ['400', '500', '600', '700'],
+  variable: '--font-pixel',
+  weight: ['400'],
+  display: 'swap',
 })
 
-const sourceSans = Source_Sans_3({
+const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  variable: '--font-source-sans',
-  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-mono',
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -29,7 +31,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${sourceSans.variable} ${playfair.variable} ${sourceSans.className}`} suppressHydrationWarning>
+      <body className={`${pressStart2P.variable} ${jetbrainsMono.variable} ${jetbrainsMono.className}`} suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>
