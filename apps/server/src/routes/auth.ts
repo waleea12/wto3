@@ -74,12 +74,15 @@ authRouter.post('/register', async (req, res, next) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10)
+    const seed = Math.random().toString(36).substring(2, 10)
+    const avatar = `https://api.dicebear.com/9.x/pixel-art/svg?seed=${seed}`
 
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
+        avatar,
       },
     })
 

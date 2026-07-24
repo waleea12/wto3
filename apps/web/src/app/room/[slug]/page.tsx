@@ -949,6 +949,17 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
                   </div>
                 )}
                 {messages.map((msg) => {
+                  const isSystem = msg.userId === 'system'
+                  if (isSystem) {
+                    return (
+                      <div key={msg.id} className="flex justify-center py-1">
+                        <span className="text-[10px] px-2 py-0.5"
+                          style={{ color: C.textFaded, fontFamily: 'var(--font-mono)', background: C.lightGray, border: '1.5px solid ' + C.textSubtle }}>
+                          {msg.message}
+                        </span>
+                      </div>
+                    )
+                  }
                   const isOwn = msg.userId === session?.user.id
                   return (
                     <div key={msg.id} className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -1087,6 +1098,17 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
                 </div>
               )}
               {messages.map((msg) => {
+                const isSystem = msg.userId === 'system'
+                if (isSystem) {
+                  return (
+                    <div key={msg.id} className="flex justify-center py-1">
+                      <span className="text-[10px] px-2 py-0.5"
+                        style={{ color: C.textFaded, fontFamily: 'var(--font-mono)', background: C.lightGray, border: '1.5px solid ' + C.textSubtle }}>
+                        {msg.message}
+                      </span>
+                    </div>
+                  )
+                }
                 const isOwn = msg.userId === session?.user.id
                 return (
                   <div key={msg.id} className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>

@@ -289,7 +289,7 @@ export default function HomePage() {
 
         {/* Footer */}
         <p className="text-[10px] text-center tracking-wide" style={{ color: '#1a1a2e', opacity: 0.25, fontFamily: 'var(--font-mono)' }}>
-          Powered by Next.js · Socket.io · PostgreSQL
+          by wleed
         </p>
       </div>
     </main>

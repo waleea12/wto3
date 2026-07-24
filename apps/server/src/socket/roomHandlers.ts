@@ -40,6 +40,17 @@ function sortedQueue(q: QueueItem[]): QueueItem[] {
   return [...q].sort((a, b) => b.votes.length - a.votes.length)
 }
 
+function systemMsg(msg: string) {
+  return {
+    id: `system-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    userId: 'system',
+    userName: 'System',
+    userAvatar: null,
+    message: msg,
+    createdAt: new Date(),
+  }
+}
+
 export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
   // JOIN ROOM
   socket.on('join_room', async (payload: JoinRoomPayload, callback) => {
@@ -97,6 +108,9 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
         userAvatar: socket.data.userAvatar,
       })
 
+      // Broadcast join system message to all (including joiner)
+      io.to(roomSlug).emit('chat_message', systemMsg(`${socket.data.userName} joined the room 👋`) as any)
+
       // Return current state + queue to joining client
       callback({
         currentVideo: state.currentVideo,
@@ -125,6 +139,8 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
       userName: socket.data.userName,
       userAvatar: socket.data.userAvatar,
     })
+    // Broadcast leave system message
+    io.to(roomSlug).emit('chat_message', systemMsg(`${socket.data.userName} left the room 👋`) as any)
   })
 
   // PLAY
@@ -389,6 +405,9 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
       userName: socket.data.userName,
       userAvatar: socket.data.userAvatar,
     })
+
+    // Broadcast leave system message
+    io.to(roomSlug).emit('chat_message', systemMsg(`${socket.data.userName} left the room 👋`) as any)
 
     // Wait 5 seconds before checking if the room is empty to allow for page refreshes
     setTimeout(async () => {
