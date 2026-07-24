@@ -106,13 +106,11 @@
   /* Pixel art ground decoration */
   .pixel-ground {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    inset: 0;
     height: 20%;
     background: linear-gradient(to bottom, #6B8E23 0%, #795548 100%);
     pointer-events: none;
-    z-index: 0;
+    z-index: -1;
   }
 }
 
@@ -459,6 +457,6 @@ body::after {
     /* Grass layer */
     linear-gradient(to bottom, #8BC34A 0%, #6B8E23 5px, #6B8E23 100%);
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
   border-top: 3px solid #1a1a2e;
 }

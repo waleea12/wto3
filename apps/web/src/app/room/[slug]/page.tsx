@@ -740,7 +740,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
   }, [])
 
   return (
-    <div className={`room-layout flex flex-col md:flex-row fixed inset-0 overflow-hidden ${isChatFocused ? 'is-chat-focused' : ''}`} style={{ height: 'var(--app-height)', background: '#4FC3F7' }}>
+    <div className={`room-layout flex flex-col md:flex-row fixed inset-0 overflow-hidden ${isChatFocused ? 'is-chat-focused' : ''}`} style={{ height: 'var(--app-height)' }}>
 
       {/* ── Main area (desktop: flex-col flex-1; mobile: just video+controls) ── */}
       <div className="flex flex-col min-w-0 flex-1 md:flex-1 min-h-0">
