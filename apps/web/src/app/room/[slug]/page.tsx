@@ -931,6 +931,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
               src={cineSrcUrl(room.currentVideo)!}
               className="w-full h-full"
               title="CineSrc player"
+              sandbox="allow-scripts allow-same-origin allow-presentation"
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
             />
