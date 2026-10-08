@@ -35,7 +35,7 @@ interface TMDBMovie {
 
 interface MovieLibraryProps {
   isHost: boolean
-  onPlay: (tmdbId: number, title: string, type: 'movie' | 'tv') => void
+  onPlay: (tmdbId: number, title: string, type: 'movie' | 'tv', season?: number, episode?: number) => void
   onClose: () => void
 }
 
@@ -219,7 +219,7 @@ function MovieDetailPanel({
   movie: TMDBMovie
   type: 'movie' | 'tv'
   isHost: boolean
-  onPlay: () => void
+  onPlay: (season?: number, episode?: number) => void
   onClose: () => void
 }) {
   const title = movie.title ?? movie.name ?? 'بدون عنوان'
@@ -230,6 +230,35 @@ function MovieDetailPanel({
   const posterUrl = movie.poster_path
     ? `${IMG_BASE}/w342${movie.poster_path}`
     : null
+  const [seasons, setSeasons] = useState<Array<{ season_number: number; name: string; episode_count: number }>>([])
+  const [season, setSeason] = useState<number | null>(null)
+  const [episodes, setEpisodes] = useState<Array<{ episode_number: number; name: string }>>([])
+  const [episode, setEpisode] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (type !== 'tv') return
+    fetch(`/api/movies/details?id=${movie.id}&type=tv`)
+      .then((res) => res.ok ? res.json() : Promise.reject())
+      .then((data) => {
+        const available = (data.seasons ?? []).filter((item: { season_number: number; episode_count: number }) => item.season_number > 0 && item.episode_count > 0)
+        setSeasons(available)
+        setSeason(available[0]?.season_number ?? null)
+      })
+      .catch(() => setSeasons([]))
+  }, [movie.id, type])
+
+  useEffect(() => {
+    if (type !== 'tv' || season === null) return
+    setEpisode(null)
+    fetch(`/api/movies/season?id=${movie.id}&season=${season}`)
+      .then((res) => res.ok ? res.json() : Promise.reject())
+      .then((data) => {
+        const available = (data.episodes ?? []).filter((item: { episode_number: number }) => item.episode_number > 0)
+        setEpisodes(available)
+        setEpisode(available[0]?.episode_number ?? null)
+      })
+      .catch(() => setEpisodes([]))
+  }, [movie.id, type, season])
 
   return (
     <div
@@ -305,13 +334,28 @@ function MovieDetailPanel({
             </div>
           </div>
         )}
+        {type === 'tv' && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <select aria-label="الموسم" value={season ?? ''} onChange={(e) => setSeason(Number(e.target.value))}
+              style={{ flex: 1, minWidth: 120, padding: 8, background: '#161722', color: '#fff', border: '1px solid #665b42' }}>
+              {seasons.length === 0 && <option value="">جارٍ تحميل المواسم</option>}
+              {seasons.map((item) => <option key={item.season_number} value={item.season_number}>{item.name || `الموسم ${item.season_number}`}</option>)}
+            </select>
+            <select aria-label="الحلقة" value={episode ?? ''} onChange={(e) => setEpisode(Number(e.target.value))}
+              style={{ flex: 1, minWidth: 120, padding: 8, background: '#161722', color: '#fff', border: '1px solid #665b42' }}>
+              {episodes.length === 0 && <option value="">جارٍ تحميل الحلقات</option>}
+              {episodes.map((item) => <option key={item.episode_number} value={item.episode_number}>{item.episode_number}. {item.name}</option>)}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Play button */}
       <div style={{ padding: '12px 16px', borderTop: '1px solid ' + C.borderSub, flexShrink: 0 }}>
         {isHost ? (
           <button
-            onClick={onPlay}
+            onClick={() => onPlay(season ?? undefined, episode ?? undefined)}
+            disabled={type === 'tv' && (season === null || episode === null)}
             style={{
               width: '100%',
               background: 'linear-gradient(135deg, hsl(38 68% 44%), hsl(38 72% 54%))',
@@ -344,6 +388,7 @@ export default function MovieLibrary({ isHost, onPlay, onClose }: MovieLibraryPr
   const [results, setResults]       = useState<TMDBMovie[]>([])
   const [trending, setTrending]     = useState<TMDBMovie[]>([])
   const [loading, setLoading]       = useState(false)
+  const [catalogError, setCatalogError] = useState(false)
   const [mediaType, setMediaType]   = useState<'movie' | 'tv'>('movie')
   const [selectedMovie, setSelected]= useState<TMDBMovie | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -359,26 +404,28 @@ export default function MovieLibrary({ isHost, onPlay, onClose }: MovieLibraryPr
 
   // Fetch trending on mount / type change
   useEffect(() => {
+    setCatalogError(false)
     fetch(`/api/movies/search?type=${mediaType}`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : Promise.reject())
       .then(d => setTrending(d.results ?? []))
-      .catch(() => {})
+      .catch(() => { setTrending([]); setCatalogError(true) })
   }, [mediaType])
 
   // Search when debounced query changes
   useEffect(() => {
     if (!debouncedQuery.trim()) { setResults([]); return }
     setLoading(true)
+    setCatalogError(false)
     fetch(`/api/movies/search?q=${encodeURIComponent(debouncedQuery)}&type=${mediaType}`)
-      .then(r => r.json())
+      .then(r => r.ok ? r.json() : Promise.reject())
       .then(d => setResults(d.results ?? []))
-      .catch(() => setResults([]))
+      .catch(() => { setResults([]); setCatalogError(true) })
       .finally(() => setLoading(false))
   }, [debouncedQuery, mediaType])
 
-  const handlePlay = useCallback((movie: TMDBMovie) => {
+  const handlePlay = useCallback((movie: TMDBMovie, season?: number, episode?: number) => {
     const title = movie.title ?? movie.name ?? 'فيلم'
-    onPlay(movie.id, title, mediaType)
+    onPlay(movie.id, title, mediaType, season, episode)
     onClose()
   }, [onPlay, onClose, mediaType])
 
@@ -440,13 +487,13 @@ export default function MovieLibrary({ isHost, onPlay, onClose }: MovieLibraryPr
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: C.text90 }}>مكتبة الأفلام</p>
-                <p style={{ margin: 0, fontSize: 10, color: C.text30 }}>مدعوم من TMDB • بدون إعلانات</p>
+                <p style={{ margin: 0, fontSize: 10, color: C.text30 }}>بيانات الأفلام والمسلسلات من TMDB</p>
               </div>
             </div>
             {/* Type toggle + close */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {(['movie', 'tv'] as const).map(t => (
-                <button key={t} onClick={() => { setMediaType(t); setQuery(''); setResults([]) }}
+                <button key={t} onClick={() => { setMediaType(t); setQuery(''); setResults([]); setSelected(null) }}
                   style={{
                     padding: '4px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: '1px solid',
                     background: mediaType === t ? C.goldFaint : 'transparent',
@@ -509,7 +556,7 @@ export default function MovieLibrary({ isHost, onPlay, onClose }: MovieLibraryPr
                     type={mediaType}
                     isHost={isHost}
                     onClick={() => setSelected(movie)}
-                    onPlay={e => { e.stopPropagation(); handlePlay(movie) }}
+                    onPlay={e => { e.stopPropagation(); if (mediaType === 'tv') setSelected(movie); else handlePlay(movie) }}
                   />
                 ))}
               </div>
@@ -519,7 +566,7 @@ export default function MovieLibrary({ isHost, onPlay, onClose }: MovieLibraryPr
                   🎬
                 </div>
                 <p style={{ fontSize: 13, color: C.text30, margin: 0 }}>
-                  {debouncedQuery ? 'لا توجد نتائج لهذا البحث' : 'جاري تحميل الأفلام...'}
+                  {catalogError ? 'تعذر تحميل المكتبة الآن' : debouncedQuery ? 'لا توجد نتائج لهذا البحث' : 'لا توجد عناوين متاحة حالياً'}
                 </p>
               </div>
             )}
@@ -527,10 +574,11 @@ export default function MovieLibrary({ isHost, onPlay, onClose }: MovieLibraryPr
             {/* Movie detail panel */}
             {selectedMovie && (
               <MovieDetailPanel
+                key={`${mediaType}:${selectedMovie.id}`}
                 movie={selectedMovie}
                 type={mediaType}
                 isHost={isHost}
-                onPlay={() => handlePlay(selectedMovie)}
+                onPlay={(season, episode) => handlePlay(selectedMovie, season, episode)}
                 onClose={() => setSelected(null)}
               />
             )}

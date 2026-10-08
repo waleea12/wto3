@@ -4,12 +4,14 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import axios from 'axios'
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:4000'
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim()
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim()
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    ...(process.env.GOOGLE_AUTH_ENABLED === 'true' && googleClientId && googleClientSecret ? [GoogleProvider({
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
       authorization: {
         params: {
           scope: [
@@ -23,7 +25,7 @@ export const authOptions: NextAuthOptions = {
           prompt: 'consent',
         },
       },
-    }),
+    })] : []),
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
@@ -54,39 +56,38 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ account }) {
-      if (account?.provider === 'google' && account.id_token) {
+    async signIn({ account, user }) {
+      if (account?.provider === 'credentials') return Boolean((user as any)?.serverToken)
+      if (account?.provider !== 'google' || !account.id_token) return false
+
+      try {
+        const { data } = await axios.post(`${SERVER_URL}/api/auth/google`, {
+          idToken: account.id_token,
+          accessToken: account.access_token,
+          refreshToken: account.refresh_token,
+        })
+        Object.assign(user, {
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          image: data.user.avatar,
+          serverToken: data.token,
+          accessToken: account.access_token,
+        })
         return true
+      } catch (error) {
+        console.error('Google account could not be connected to the watch party server', error)
+        return false
       }
-      if (account?.provider === 'credentials') {
-        return true
-      }
-      return false
     },
     async jwt({ token, account, user }) {
-      if (account?.provider === 'credentials' && user) {
+      if (account && user) {
         token.serverToken = (user as any).serverToken
         token.userId = user.id
         token.name = user.name
         token.email = user.email
         token.picture = user.image
-      } else if (account && user) {
-        try {
-          const response = await axios.post(`${SERVER_URL}/api/auth/google`, {
-            idToken: account.id_token,
-            accessToken: account.access_token,
-            refreshToken: account.refresh_token,
-          })
-          token.serverToken = response.data.token
-          token.accessToken = account.access_token
-          token.refreshToken = account.refresh_token
-          token.userId = response.data.user.id
-          token.name = response.data.user.name
-          token.email = response.data.user.email
-          token.picture = response.data.user.avatar
-        } catch (err) {
-          console.error('Failed to sync user with server:', err)
-        }
+        token.accessToken = (user as any).accessToken
       }
       return token
     },

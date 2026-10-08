@@ -1,23 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const TMDB_BASE = 'https://api.themoviedb.org/3'
-const API_KEY = process.env.TMDB_API_KEY!
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const q = searchParams.get('q') ?? ''
-  const type = (searchParams.get('type') ?? 'movie') as 'movie' | 'tv'
-  const page = searchParams.get('page') ?? '1'
+  const token = process.env.TMDB_READ_ACCESS_TOKEN
+  if (!token) return NextResponse.json({ error: 'TMDB is not configured' }, { status: 503 })
+  const q = (searchParams.get('q') ?? '').trim().slice(0, 100)
+  const type = searchParams.get('type') === 'tv' ? 'tv' : 'movie'
+  const page = Math.min(20, Math.max(1, Number.parseInt(searchParams.get('page') ?? '1', 10) || 1))
 
   try {
     let url: string
     if (q.trim()) {
-      url = `${TMDB_BASE}/search/${type}?api_key=${API_KEY}&query=${encodeURIComponent(q)}&page=${page}&language=ar-SA&include_adult=false`
+      url = `${TMDB_BASE}/search/${type}?query=${encodeURIComponent(q)}&page=${page}&language=ar-SA&include_adult=false`
     } else {
-      url = `${TMDB_BASE}/trending/${type}/week?api_key=${API_KEY}&page=${page}&language=ar-SA`
+      url = `${TMDB_BASE}/trending/${type}/week?page=${page}&language=ar-SA`
     }
 
-    const res = await fetch(url, { next: { revalidate: 60 } })
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      next: { revalidate: 60 },
+    })
     if (!res.ok) {
       return NextResponse.json({ error: 'TMDB error' }, { status: res.status })
     }

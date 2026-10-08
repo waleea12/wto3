@@ -1,6 +1,6 @@
 'use client'
-import { signIn } from 'next-auth/react'
-import { useState } from 'react'
+import { getProviders, signIn } from 'next-auth/react'
+import { useEffect, useState } from 'react'
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:4000'
 
@@ -11,6 +11,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [googleAvailable, setGoogleAvailable] = useState(false)
+
+  useEffect(() => {
+    getProviders().then((providers) => setGoogleAvailable(Boolean(providers?.google))).catch(() => setGoogleAvailable(false))
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,7 +47,7 @@ export default function LoginPage() {
         password,
       })
 
-      if (result?.error) {
+      if (!result?.ok || result.error) {
         throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة.')
       }
 
@@ -173,6 +178,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 required
+                minLength={isRegistering ? 8 : undefined}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="input-field"
@@ -190,16 +196,16 @@ export default function LoginPage() {
           </form>
 
           {/* Divider */}
-          <div className="relative flex items-center gap-3">
+          {googleAvailable && <div className="relative flex items-center gap-3">
             <div className="flex-1" style={{ height: 2, background: '#1a1a2e', opacity: 0.12 }} />
             <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#1a1a2e', opacity: 0.35, fontFamily: 'var(--font-mono)' }}>
               or continue with
             </span>
             <div className="flex-1" style={{ height: 2, background: '#1a1a2e', opacity: 0.12 }} />
-          </div>
+          </div>}
 
           {/* Google sign-in */}
-          <button
+          {googleAvailable && <button
             onClick={() => signIn('google', { callbackUrl: '/' })}
             className="w-full flex items-center justify-center gap-3 px-5 py-2.5 font-bold text-sm transition-all duration-100"
             style={{
@@ -226,7 +232,7 @@ export default function LoginPage() {
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
             Google
-          </button>
+          </button>}
 
           {/* Toggle register / login */}
           <p className="text-center text-sm" style={{ color: '#1a1a2e', opacity: 0.5, fontFamily: 'var(--font-mono)' }}>

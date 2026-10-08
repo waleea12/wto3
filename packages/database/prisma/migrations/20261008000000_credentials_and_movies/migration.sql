@@ -1,0 +1,3 @@
+ALTER TABLE "users" ALTER COLUMN "googleId" DROP NOT NULL;
+ALTER TABLE "users" ADD COLUMN "password" TEXT;
+ALTER TYPE "VideoSource" ADD VALUE IF NOT EXISTS 'movie';

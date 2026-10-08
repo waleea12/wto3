@@ -63,9 +63,11 @@ authRouter.post('/google', async (req, res, next) => {
 // Accepts { name, email, password }
 authRouter.post('/register', async (req, res, next) => {
   try {
-    const { name, email, password } = req.body
-    if (!name || !email || !password) {
-      throw new AppError(400, 'Missing name, email, or password')
+    const name = typeof req.body.name === 'string' ? req.body.name.trim() : ''
+    const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : ''
+    const password = typeof req.body.password === 'string' ? req.body.password : ''
+    if (!name || name.length > 80 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8 || password.length > 128) {
+      throw new AppError(400, 'Enter a name, valid email, and password of 8–128 characters')
     }
 
     const existingUser = await prisma.user.findUnique({ where: { email } })
@@ -101,7 +103,8 @@ authRouter.post('/register', async (req, res, next) => {
 // Accepts { email, password }
 authRouter.post('/login', async (req, res, next) => {
   try {
-    const { email, password } = req.body
+    const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : ''
+    const password = req.body.password
     if (!email || !password) {
       throw new AppError(400, 'Missing email or password')
     }

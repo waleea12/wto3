@@ -134,6 +134,7 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
     if (!roomSlug) return
 
     socket.leave(roomSlug)
+    socket.data.roomSlug = ''
     socket.to(roomSlug).emit('user_left', {
       userId: socket.data.userId,
       userName: socket.data.userName,
@@ -220,13 +221,17 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
     if (!roomSlug) return
     if (!isHost(socket, roomSlug)) return
 
+    if (payload.source === 'movie') {
+      if (!/^(?:movie:[1-9]\d*|tv:[1-9]\d*:[1-9]\d*:[1-9]\d*)$/.test(payload.videoId)) return
+    }
+
     const state = roomStates.get(roomSlug)
     if (!state) return
 
     state.currentVideo = payload.videoId
     state.currentSource = payload.source
     state.currentTime = 0
-    state.isPlaying = true
+    state.isPlaying = payload.source !== 'movie'
     state.serverTimestamp = Date.now()
     const tokenToUse = payload.driveToken || (socket.data as any).driveToken
     if (tokenToUse) {
@@ -239,7 +244,7 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
         currentVideo: payload.videoId,
         currentSource: payload.source,
         currentTime: 0,
-        isPlaying: true,
+        isPlaying: state.isPlaying,
       },
     })
 

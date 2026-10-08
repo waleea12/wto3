@@ -5,10 +5,19 @@ import { useParams, useRouter } from 'next/navigation'
 import { useSocketStore } from '@/store/socketStore'
 import axios from 'axios'
 import DriveBrowser from '@/components/DriveBrowser'
-// MovieLibrary removed
+import MovieLibrary from '@/components/MovieLibrary'
 
 
 const SERVER = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:4000'
+const CINESRC_ORIGIN = 'https://cinesrc.st'
+
+function cineSrcUrl(videoId: string): string | null {
+  const movie = /^movie:([1-9]\d*)$/.exec(videoId)
+  if (movie) return `${CINESRC_ORIGIN}/embed/movie/${movie[1]}?autoplay=false`
+  const tv = /^tv:([1-9]\d*):([1-9]\d*):([1-9]\d*)$/.exec(videoId)
+  if (tv) return `${CINESRC_ORIGIN}/embed/tv/${tv[1]}?s=${tv[2]}&e=${tv[3]}&autoplay=false&autonext=false`
+  return null
+}
 
 type VideoSource = 'youtube' | 'drive' | 'movie' | null
 
@@ -388,6 +397,8 @@ export default function RoomPage() {
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [showDriveBrowser, setShowDriveBrowser] = useState(false)
   const [showYouTubeModal, setShowYouTubeModal] = useState(false)
+  const [showMovieLibrary, setShowMovieLibrary] = useState(false)
+  const [playerError, setPlayerError] = useState('')
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [sidebarTab, setSidebarTab] = useState<'chat' | 'queue'>('chat')
   const [isChatFocused, setIsChatFocused] = useState(false)
@@ -396,6 +407,9 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
 
 
   const playerRef = useRef<HTMLIFrameElement>(null)
+  const cineSrcRef = useRef<HTMLIFrameElement>(null)
+  const cineSrcTimeRef = useRef(0)
+  const roomRef = useRef<RoomState | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
@@ -422,7 +436,38 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
   useEffect(() => {
     isPlayingRef.current = room?.isPlaying ?? false
     roomSourceRef.current = room?.currentSource ?? null
-  }, [room?.isPlaying, room?.currentSource])
+    roomRef.current = room
+  }, [room])
+
+  const sendCineSrcCommand = useCallback((command: 'play' | 'pause' | 'seek', args: number[] = []) => {
+    cineSrcRef.current?.contentWindow?.postMessage({ type: 'cinesrc:command', command, args }, CINESRC_ORIGIN)
+  }, [])
+
+  useEffect(() => {
+    if (!socket || room?.currentSource !== 'movie') return
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== CINESRC_ORIGIN || event.source !== cineSrcRef.current?.contentWindow) return
+      const data = event.data
+      if (!data || typeof data !== 'object' || typeof data.type !== 'string') return
+      if (data.type === 'cinesrc:ready') {
+        setPlayerError('')
+        const state = roomRef.current
+        if (state?.currentTime) sendCineSrcCommand('seek', [state.currentTime])
+        if (state?.isPlaying) sendCineSrcCommand('play')
+      }
+      if (typeof data.currentTime === 'number' && Number.isFinite(data.currentTime)) {
+        cineSrcTimeRef.current = data.currentTime
+      }
+      if (data.type === 'cinesrc:error') setPlayerError('تعذر تشغيل هذا العنوان من CineSrc حالياً')
+      if (!roomRef.current?.isHost) return
+      const currentTime = cineSrcTimeRef.current
+      if (data.type === 'cinesrc:play') socket.emit('play', { currentTime, serverTimestamp: Date.now() })
+      if (data.type === 'cinesrc:pause') socket.emit('pause', { currentTime, serverTimestamp: Date.now() })
+      if (data.type === 'cinesrc:seeked') socket.emit('seek', { currentTime, serverTimestamp: Date.now() })
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [socket, room?.currentSource, sendCineSrcCommand])
 
   const lastPlayerState = useRef<number>(-1)
   useEffect(() => {
@@ -485,6 +530,10 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
     socket.on('user_left', (data: any) => setParticipants((prev) => prev.filter((p) => p.user.id !== data.userId)))
     socket.on('play', (p: any) => {
       setRoom((r) => r ? { ...r, isPlaying: true, currentTime: p.currentTime } : r)
+      if (cineSrcRef.current) {
+        sendCineSrcCommand('seek', [p.currentTime])
+        sendCineSrcCommand('play')
+      }
       if (videoRef.current) { videoRef.current.currentTime = p.currentTime; videoRef.current.play() }
       if (playerRef.current?.contentWindow) {
         playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [p.currentTime, true] }), '*')
@@ -493,6 +542,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
     })
     socket.on('pause', (p: any) => {
       setRoom((r) => r ? { ...r, isPlaying: false, currentTime: p.currentTime } : r)
+      if (cineSrcRef.current) sendCineSrcCommand('pause')
       if (videoRef.current) { videoRef.current.pause(); videoRef.current.currentTime = p.currentTime }
       if (playerRef.current?.contentWindow) {
         playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*')
@@ -500,12 +550,17 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
     })
     socket.on('seek', (p: any) => {
       setRoom((r) => r ? { ...r, currentTime: p.currentTime } : r)
+      if (cineSrcRef.current) sendCineSrcCommand('seek', [p.currentTime])
       if (videoRef.current) videoRef.current.currentTime = p.currentTime
       if (playerRef.current?.contentWindow) {
         playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [p.currentTime, true] }), '*')
       }
     })
-    socket.on('change_video', (p: any) => setRoom((r) => r ? { ...r, currentVideo: p.videoId, currentSource: p.source as VideoSource, currentTime: 0, isPlaying: true } : r))
+    socket.on('change_video', (p: any) => {
+      setPlayerError('')
+      cineSrcTimeRef.current = 0
+      setRoom((r) => r ? { ...r, currentVideo: p.videoId, currentSource: p.source as VideoSource, currentTime: 0, isPlaying: p.source !== 'movie' } : r)
+    })
     socket.on('chat_message', (msg: any) => { setMessages((prev) => [...prev, msg as ChatMessage]); chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) })
     socket.on('typing', (p: any) => {
       if (p.userId === session?.user.id) return
@@ -513,6 +568,10 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
     })
     socket.on('sync_state', (state: any) => {
       setRoom((r) => r ? { ...r, currentTime: state.currentTime, isPlaying: state.isPlaying } : r)
+      if (cineSrcRef.current) {
+        sendCineSrcCommand('seek', [state.currentTime])
+        sendCineSrcCommand(state.isPlaying ? 'play' : 'pause')
+      }
       if (videoRef.current) { videoRef.current.currentTime = state.currentTime; if (state.isPlaying) videoRef.current.play(); else videoRef.current.pause() }
       if (playerRef.current?.contentWindow) {
         playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [state.currentTime, true] }), '*')
@@ -526,7 +585,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
       socket.emit('leave_room')
       ;(['user_joined','user_left','play','pause','seek','change_video','chat_message','typing','sync_state','host_changed','queue_updated'] as any[]).forEach((e) => socket.off(e))
     }
-  }, [socket, connected, slug, session])
+  }, [socket, connected, slug, session, sendCineSrcCommand])
 
   useEffect(() => {
     if (!session) return
@@ -552,10 +611,11 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
       let currentTime = 0
       if (source === 'drive') currentTime = videoRef.current?.currentTime ?? 0
       else if (source === 'youtube') currentTime = ytCurrentTimeRef.current
+      else if (source === 'movie') currentTime = cineSrcTimeRef.current
       socket.emit('heartbeat', { currentTime, buffered: 0, latency: 0 })
     }, 5000)
     return () => { if (heartbeatInterval.current) clearInterval(heartbeatInterval.current) }
-  }, [socket, connected, room?.currentTime])
+  }, [socket, connected])
 
   useEffect(() => {
     if (!room || !videoRef.current || room.currentSource !== 'drive') return
@@ -629,6 +689,15 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
   function handleYouTubePlay(id: string, title: string, thumbnail: string) {
     socket?.emit('change_video', { videoId: id, source: 'youtube', title })
     setShowYouTubeModal(false)
+  }
+
+  function handleMoviePlay(tmdbId: number, title: string, type: 'movie' | 'tv', season?: number, episode?: number) {
+    if (!room?.isHost || !Number.isSafeInteger(tmdbId) || tmdbId < 1) return
+    if (type === 'tv' && (!season || !episode)) return
+    const videoId = type === 'movie' ? `movie:${tmdbId}` : `tv:${tmdbId}:${season}:${episode}`
+    cineSrcTimeRef.current = 0
+    socket?.emit('change_video', { videoId, source: 'movie', title })
+    setShowMovieLibrary(false)
   }
 
 
@@ -825,7 +894,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
               <div>
                 <p className="text-base font-bold" style={{ color: C.textFaded, fontFamily: 'var(--font-pixel)', fontSize: '0.7rem' }}>No video selected</p>
                 <p className="text-sm mt-1" style={{ color: C.textFaint }}>
-                  {room?.isHost ? 'اضغط على YouTube أو Drive' : 'أضف مقطع للطابور أو انتظر الهوست'}
+                  {room?.isHost ? 'اختر فيلماً أو مسلسلاً أو فيديو' : 'أضف مقطع للطابور أو انتظر الهوست'}
                 </p>
               </div>
             </div>
@@ -855,6 +924,23 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
               playsInline
               onPlay={handlePlay} onPause={handlePause} onSeeked={handleSeeked} />
            )}
+          {room?.currentVideo && room.currentSource === 'movie' && cineSrcUrl(room.currentVideo) && (
+            <iframe
+              key={room.currentVideo}
+              ref={cineSrcRef}
+              src={cineSrcUrl(room.currentVideo)!}
+              className="w-full h-full"
+              title="CineSrc player"
+              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+              allowFullScreen
+            />
+          )}
+          {playerError && room?.currentSource === 'movie' && (
+            <div role="alert" className="absolute top-3 left-3 right-3 z-20 p-2 text-sm text-center"
+              style={{ background: C.dark, color: C.white, border: '2px solid ' + C.red }}>
+              {playerError}
+            </div>
+          )}
            {/* Expand/collapse button */}
            <button onClick={() => setIsVideoExpanded(!isVideoExpanded)} title={isVideoExpanded ? 'تصغير الفيديو' : 'تكبير الفيديو'}
             className="absolute bottom-3 right-14 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-100 z-20"
@@ -902,6 +988,11 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
                   <path d="M73.4 26.5L59.65 3.3a15.4 15.4 0 0 0-2.25-2.1L43.65 25 60.7 53h27.45a15.35 15.35 0 0 0-2.1-7.85L73.4 26.5z" fill="#ffba00" transform="scale(0.8)"/>
                 </svg>
                 <span className="hidden sm:inline">Drive</span>
+              </button>
+              <button onClick={() => setShowMovieLibrary(true)}
+                className="px-3 md:px-5 flex-shrink-0 font-bold text-xs sm:text-sm transition-all duration-100"
+                style={{ background: C.gold, border: '2px solid ' + C.border, color: C.dark, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)' }}>
+                أفلام ومسلسلات
               </button>
             </div>
           </div>
@@ -1188,6 +1279,14 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
           onQueue={handleYouTubeQueue}
           isHost={room?.isHost ?? false}
           onClose={() => setShowYouTubeModal(false)}
+        />
+      )}
+
+      {showMovieLibrary && (
+        <MovieLibrary
+          isHost={room?.isHost ?? false}
+          onPlay={handleMoviePlay}
+          onClose={() => setShowMovieLibrary(false)}
         />
       )}
 
