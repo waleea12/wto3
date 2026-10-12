@@ -12,6 +12,7 @@ import type { ChatMessage, UserPresencePayload } from '@watch-party/types'
 
 const SERVER = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:4000'
 const CINESRC_ORIGIN = 'https://cinesrc.st'
+const YOUTUBE_ORIGIN = 'https://www.youtube.com'
 
 function cineSrcUrl(videoId: string): string | null {
   const movie = /^movie:([1-9]\d*)$/.exec(videoId)
@@ -397,10 +398,16 @@ export default function RoomPage() {
   const [playerError, setPlayerError] = useState('')
   const [roomLoadError, setRoomLoadError] = useState('')
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [fullscreenFallback, setFullscreenFallback] = useState(false)
+  const [youtubeMuted, setYoutubeMuted] = useState(true)
   const [sidebarTab, setSidebarTab] = useState<'chat' | 'queue'>('chat')
   const [isChatFocused, setIsChatFocused] = useState(false)
   const [videoHeightPx, setVideoHeightPx] = useState<number | null>(null)
   const [isVideoExpanded, setIsVideoExpanded] = useState(false)
+  // Viewer-only: browser blocks autoplay until user interacts with the page.
+  // We show a one-time overlay so they can unlock playback with a single tap.
+  const [viewerNeedsUnlock, setViewerNeedsUnlock] = useState(false)
+  const pendingCineSrcActionsRef = useRef<Array<{ cmd: 'play' | 'pause' | 'seek'; args: number[] }>>([])
 
 
   const playerRef = useRef<HTMLIFrameElement>(null)
@@ -417,8 +424,14 @@ export default function RoomPage() {
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const typingExpiryTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
   const heartbeatInterval = useRef<ReturnType<typeof setInterval> | null>(null)
-  const isPlayingRef = useRef<boolean>(false)
   const ytCurrentTimeRef = useRef<number>(0)
+  const youtubeReadyRef = useRef(false)
+  const pendingYoutubeSyncRef = useRef(false)
+  const suppressYoutubeHostEventsUntilRef = useRef(0)
+  const youtubeMutedRef = useRef(true)
+  const youtubeDurationRef = useRef(0)
+  const youtubeEndedLocallyRef = useRef(false)
+  const playbackAnchorRef = useRef({ currentTime: 0, isPlaying: false, receivedAt: Date.now() })
   const roomSourceRef = useRef<VideoSource>(null)
 
   useEffect(() => () => {
@@ -446,7 +459,6 @@ export default function RoomPage() {
   }, [])
 
   useEffect(() => {
-    isPlayingRef.current = room?.isPlaying ?? false
     roomSourceRef.current = room?.currentSource ?? null
     roomRef.current = room
   }, [room])
@@ -454,6 +466,29 @@ export default function RoomPage() {
   const sendCineSrcCommand = useCallback((command: 'play' | 'pause' | 'seek', args: number[] = []) => {
     cineSrcRef.current?.contentWindow?.postMessage({ type: 'cinesrc:command', command, args }, CINESRC_ORIGIN)
   }, [])
+
+  const setPlaybackAnchor = useCallback((currentTime: number, isPlaying: boolean) => {
+    playbackAnchorRef.current = { currentTime, isPlaying, receivedAt: Date.now() }
+  }, [])
+
+  const sendYoutubeCommand = useCallback((func: string, args: unknown[] = []) => {
+    playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), YOUTUBE_ORIGIN)
+  }, [])
+
+  const syncYoutubePlayer = useCallback(() => {
+    if (!youtubeReadyRef.current || !pendingYoutubeSyncRef.current) return
+    const anchor = playbackAnchorRef.current
+    const expectedTime = anchor.currentTime + (anchor.isPlaying ? (Date.now() - anchor.receivedAt) / 1000 : 0)
+    const duration = youtubeDurationRef.current
+    const currentTime = duration > 0 ? Math.min(expectedTime, Math.max(0, duration - 0.25)) : expectedTime
+    const shouldPlay = anchor.isPlaying && (duration <= 0 || expectedTime < duration - 0.25)
+    suppressYoutubeHostEventsUntilRef.current = Date.now() + 3000
+    ytCurrentTimeRef.current = currentTime
+    sendYoutubeCommand('seekTo', [currentTime, true])
+    sendYoutubeCommand(shouldPlay ? 'playVideo' : 'pauseVideo')
+    sendYoutubeCommand(youtubeMutedRef.current ? 'mute' : 'unMute')
+    pendingYoutubeSyncRef.current = false
+  }, [sendYoutubeCommand])
 
   useEffect(() => {
     if (!socket || room?.currentSource !== 'movie') return
@@ -464,8 +499,25 @@ export default function RoomPage() {
       if (data.type === 'cinesrc:ready') {
         setPlayerError('')
         const state = roomRef.current
-        if (state?.currentTime) sendCineSrcCommand('seek', [state.currentTime])
-        if (state?.isPlaying) sendCineSrcCommand('play')
+        const isHost = state?.isHost ?? false
+
+        if (isHost) {
+          // Host controls playback directly
+          if (state?.currentTime) sendCineSrcCommand('seek', [state.currentTime])
+          if (state?.isPlaying) sendCineSrcCommand('play')
+        } else {
+          // Viewer: browser blocks autoplay without a user gesture on the iframe.
+          // Queue the pending commands and show the unlock overlay.
+          pendingCineSrcActionsRef.current = []
+          if (state?.currentTime) {
+            pendingCineSrcActionsRef.current.push({ cmd: 'seek', args: [state.currentTime] })
+          }
+          if (state?.isPlaying) {
+            pendingCineSrcActionsRef.current.push({ cmd: 'play', args: [] })
+          }
+          // Always show the overlay so the viewer can unlock playback.
+          setViewerNeedsUnlock(true)
+        }
       }
       if (typeof data.currentTime === 'number' && Number.isFinite(data.currentTime)) {
         cineSrcTimeRef.current = data.currentTime
@@ -485,16 +537,41 @@ export default function RoomPage() {
   useEffect(() => {
     if (!socket || room?.currentSource !== 'youtube') return
     const handleMessage = (e: MessageEvent) => {
-      if (e.origin !== 'https://www.youtube.com') return
+      if (e.origin !== YOUTUBE_ORIGIN || e.source !== playerRef.current?.contentWindow) return
       try {
         const data = JSON.parse(e.data)
+        if (data.event === 'onReady' || data.event === 'infoDelivery') {
+          youtubeReadyRef.current = true
+        }
         if (data.event === 'infoDelivery' && data.info) {
+          const duration = Number(data.info.duration)
+          const firstDuration = youtubeDurationRef.current === 0 && Number.isFinite(duration) && duration > 0
+          if (Number.isFinite(duration) && duration > 0) youtubeDurationRef.current = duration
+          const anchor = playbackAnchorRef.current
+          const expectedTime = anchor.currentTime + (anchor.isPlaying ? (Date.now() - anchor.receivedAt) / 1000 : 0)
+          if (firstDuration && roomRef.current?.isHost) {
+            socket.emit('heartbeat', { currentTime: expectedTime, buffered: 0, latency: 0, duration })
+          }
+          if (youtubeDurationRef.current > 0 && anchor.isPlaying && expectedTime >= youtubeDurationRef.current - 0.25 && !youtubeEndedLocallyRef.current) {
+            const endTime = Math.max(0, youtubeDurationRef.current - 0.25)
+            youtubeEndedLocallyRef.current = true
+            setPlaybackAnchor(endTime, false)
+            setRoom((current) => current ? { ...current, currentTime: endTime, isPlaying: false } : current)
+            pendingYoutubeSyncRef.current = true
+            if (roomRef.current?.isHost) socket.emit('pause', { currentTime: endTime, serverTimestamp: Date.now() })
+          }
+          syncYoutubePlayer()
           const state = data.info.playerState
-          const time = data.info.currentTime ?? room?.currentTime ?? 0
-          ytCurrentTimeRef.current = time
+          const time = typeof data.info.currentTime === 'number' ? data.info.currentTime : ytCurrentTimeRef.current
+          if (Date.now() >= suppressYoutubeHostEventsUntilRef.current) ytCurrentTimeRef.current = time
+          if (typeof data.info.muted === 'boolean') {
+            youtubeMutedRef.current = data.info.muted
+            setYoutubeMuted(data.info.muted)
+          }
           if (state !== undefined && state !== lastPlayerState.current) {
             lastPlayerState.current = state
-            if (room?.isHost) {
+            if (roomRef.current?.isHost && !youtubeEndedLocallyRef.current && Date.now() >= suppressYoutubeHostEventsUntilRef.current) {
+              setPlaybackAnchor(time, state === 1)
               if (state === 1) socket.emit('play', { currentTime: time, serverTimestamp: Date.now() })
               else if (state === 2) socket.emit('pause', { currentTime: time, serverTimestamp: Date.now() })
             }
@@ -505,14 +582,14 @@ export default function RoomPage() {
     window.addEventListener('message', handleMessage)
     const listenInterval = setInterval(() => {
       if (playerRef.current?.contentWindow) {
-        playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*')
+        playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), YOUTUBE_ORIGIN)
       }
     }, 1000)
     return () => {
       window.removeEventListener('message', handleMessage)
       clearInterval(listenInterval)
     }
-  }, [room?.isHost, room?.currentSource, socket, room?.currentTime])
+  }, [room?.currentSource, socket, setPlaybackAnchor, syncYoutubePlayer])
 
   useEffect(() => {
     if (!socket || !connected || !slug) return
@@ -523,6 +600,12 @@ export default function RoomPage() {
       driveToken: (session?.user as any)?.accessToken ?? undefined
     }, (state: any) => {
       setRoomLoadError('')
+      setPlaybackAnchor(state.currentTime, state.isPlaying)
+      youtubeEndedLocallyRef.current = false
+      if (state.currentSource === 'youtube') {
+        pendingYoutubeSyncRef.current = true
+        if (roomRef.current?.currentVideo === state.currentVideo) syncYoutubePlayer()
+      }
       setRoom((prev) => ({
         isHost: state.isHost ?? prev?.isHost ?? false,
         hostId: state.hostId ?? prev?.hostId ?? '',
@@ -556,6 +639,8 @@ export default function RoomPage() {
       setTypingUsers((prev) => prev.filter((user) => onlineIds.has(user.userId)))
     })
     socket.on('play', (p: any) => {
+      youtubeEndedLocallyRef.current = false
+      setPlaybackAnchor(p.currentTime, true)
       setRoom((r) => r ? { ...r, isPlaying: true, currentTime: p.currentTime } : r)
       if (cineSrcRef.current) {
         sendCineSrcCommand('seek', [p.currentTime])
@@ -563,29 +648,40 @@ export default function RoomPage() {
       }
       if (videoRef.current) { videoRef.current.currentTime = p.currentTime; videoRef.current.play() }
       if (playerRef.current?.contentWindow) {
-        playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [p.currentTime, true] }), '*')
-        playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*')
+        sendYoutubeCommand('seekTo', [p.currentTime, true])
+        sendYoutubeCommand('playVideo')
       }
     })
     socket.on('pause', (p: any) => {
+      setPlaybackAnchor(p.currentTime, false)
       setRoom((r) => r ? { ...r, isPlaying: false, currentTime: p.currentTime } : r)
       if (cineSrcRef.current) sendCineSrcCommand('pause')
       if (videoRef.current) { videoRef.current.pause(); videoRef.current.currentTime = p.currentTime }
       if (playerRef.current?.contentWindow) {
-        playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*')
+        sendYoutubeCommand('pauseVideo')
       }
     })
     socket.on('seek', (p: any) => {
+      youtubeEndedLocallyRef.current = false
+      setPlaybackAnchor(p.currentTime, playbackAnchorRef.current.isPlaying)
       setRoom((r) => r ? { ...r, currentTime: p.currentTime } : r)
       if (cineSrcRef.current) sendCineSrcCommand('seek', [p.currentTime])
       if (videoRef.current) videoRef.current.currentTime = p.currentTime
       if (playerRef.current?.contentWindow) {
-        playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [p.currentTime, true] }), '*')
+        sendYoutubeCommand('seekTo', [p.currentTime, true])
       }
     })
     socket.on('change_video', (p: any) => {
       setPlayerError('')
       cineSrcTimeRef.current = 0
+      setPlaybackAnchor(0, p.source !== 'movie')
+      pendingYoutubeSyncRef.current = p.source === 'youtube'
+      youtubeReadyRef.current = false
+      youtubeDurationRef.current = 0
+      youtubeEndedLocallyRef.current = false
+      lastPlayerState.current = -1
+      pendingCineSrcActionsRef.current = []
+      setViewerNeedsUnlock(false)
       setRoom((r) => r ? { ...r, currentVideo: p.videoId, currentSource: p.source as VideoSource, currentTime: 0, isPlaying: p.source !== 'movie' } : r)
     })
     socket.on('chat_message', (msg) => setMessages((prev) => prev.some((item) => item.id === msg.id) ? prev : [...prev, msg]))
@@ -611,6 +707,7 @@ export default function RoomPage() {
       }, 3000))
     })
     socket.on('sync_state', (state: any) => {
+      setPlaybackAnchor(state.currentTime, state.isPlaying)
       setRoom((r) => r ? { ...r, currentTime: state.currentTime, isPlaying: state.isPlaying } : r)
       if (cineSrcRef.current) {
         sendCineSrcCommand('seek', [state.currentTime])
@@ -618,8 +715,8 @@ export default function RoomPage() {
       }
       if (videoRef.current) { videoRef.current.currentTime = state.currentTime; if (state.isPlaying) videoRef.current.play(); else videoRef.current.pause() }
       if (playerRef.current?.contentWindow) {
-        playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [state.currentTime, true] }), '*')
-        playerRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: state.isPlaying ? 'playVideo' : 'pauseVideo', args: [] }), '*')
+        sendYoutubeCommand('seekTo', [state.currentTime, true])
+        sendYoutubeCommand(state.isPlaying ? 'playVideo' : 'pauseVideo')
       }
     })
     socket.on('host_changed', (p: any) => setRoom((r) => r ? { ...r, hostId: p.newHostId, isHost: p.newHostId === session?.user.id } : r))
@@ -631,7 +728,7 @@ export default function RoomPage() {
       typingExpiryTimers.current.clear()
       ;(['user_joined','user_left','presence_updated','play','pause','seek','change_video','chat_message','message_reactions','typing','sync_state','host_changed','queue_updated'] as any[]).forEach((e) => socket.off(e))
     }
-  }, [socket, connected, slug, session?.user.id, session?.user.serverToken, session?.user.accessToken, sendCineSrcCommand])
+  }, [socket, connected, slug, session?.user.id, session?.user.serverToken, session?.user.accessToken, sendCineSrcCommand, sendYoutubeCommand, setPlaybackAnchor, syncYoutubePlayer])
 
   useEffect(() => {
     if (!session || !connected) return
@@ -673,9 +770,15 @@ export default function RoomPage() {
       const source = roomSourceRef.current
       let currentTime = 0
       if (source === 'drive') currentTime = videoRef.current?.currentTime ?? 0
-      else if (source === 'youtube') currentTime = ytCurrentTimeRef.current
+      else if (source === 'youtube') {
+        if (!youtubeReadyRef.current || youtubeEndedLocallyRef.current || Date.now() < suppressYoutubeHostEventsUntilRef.current) return
+        currentTime = ytCurrentTimeRef.current
+      }
       else if (source === 'movie') currentTime = cineSrcTimeRef.current
-      socket.emit('heartbeat', { currentTime, buffered: 0, latency: 0 })
+      socket.emit('heartbeat', {
+        currentTime, buffered: 0, latency: 0,
+        ...(source === 'youtube' && youtubeDurationRef.current > 0 ? { duration: youtubeDurationRef.current } : {}),
+      })
     }, 5000)
     return () => { if (heartbeatInterval.current) clearInterval(heartbeatInterval.current) }
   }, [socket, connected])
@@ -700,6 +803,7 @@ export default function RoomPage() {
   useEffect(() => {
     function onFsChange() {
       setIsFullscreen(
+        fullscreenFallback ||
         !!document.fullscreenElement ||
         !!(document as any).webkitFullscreenElement
       )
@@ -710,9 +814,21 @@ export default function RoomPage() {
       document.removeEventListener('fullscreenchange', onFsChange)
       document.removeEventListener('webkitfullscreenchange', onFsChange)
     }
-  }, [])
+  }, [fullscreenFallback])
+
+  useEffect(() => {
+    if (!fullscreenFallback) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previousOverflow }
+  }, [fullscreenFallback])
 
   function toggleFullscreen() {
+    if (fullscreenFallback) {
+      setFullscreenFallback(false)
+      setIsFullscreen(false)
+      return
+    }
     const isFs =
       !!document.fullscreenElement ||
       !!(document as any).webkitFullscreenElement
@@ -720,24 +836,24 @@ export default function RoomPage() {
     if (!isFs) {
       const vid = videoRef.current
       const container = videoContainerRef.current
-      const iframe = playerRef.current
 
       if (room?.currentSource === 'drive' && vid) {
         if (vid.requestFullscreen) {
-          vid.requestFullscreen().catch(() => {})
+          vid.requestFullscreen().catch(() => setFullscreenFallback(true))
         } else if ((vid as any).webkitEnterFullscreen) {
           ;(vid as any).webkitEnterFullscreen()
         } else if ((vid as any).webkitRequestFullscreen) {
           ;(vid as any).webkitRequestFullscreen()
+        } else {
+          setFullscreenFallback(true)
         }
       } else if (container) {
         if (container.requestFullscreen) {
-          container.requestFullscreen().catch(() => {
-            if (iframe?.requestFullscreen) iframe.requestFullscreen().catch(() => {})
-            else if ((iframe as any)?.webkitRequestFullscreen) (iframe as any).webkitRequestFullscreen()
-          })
+          container.requestFullscreen().catch(() => setFullscreenFallback(true))
         } else if ((container as any).webkitRequestFullscreen) {
           ;(container as any).webkitRequestFullscreen()
+        } else {
+          setFullscreenFallback(true)
         }
       }
     } else {
@@ -747,6 +863,14 @@ export default function RoomPage() {
         ;(document as any).webkitExitFullscreen()
       }
     }
+  }
+
+  function toggleYoutubeMute() {
+    const muted = !youtubeMutedRef.current
+    youtubeMutedRef.current = muted
+    setYoutubeMuted(muted)
+    sendYoutubeCommand(muted ? 'mute' : 'unMute')
+    if (!muted) sendYoutubeCommand('setVolume', [100])
   }
 
   function handleYouTubePlay(id: string, title: string, thumbnail: string) {
@@ -871,7 +995,7 @@ export default function RoomPage() {
   const stableYoutubeUrl = useMemo(() => {
     if (!room?.currentVideo || room.currentSource !== 'youtube') return ''
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    return `https://www.youtube.com/embed/${room.currentVideo}?enablejsapi=1&origin=${encodeURIComponent(origin)}&autoplay=1&mute=1&playsinline=1&controls=${room.isHost ? 1 : 0}&rel=0`
+    return `https://www.youtube.com/embed/${room.currentVideo}?enablejsapi=1&origin=${encodeURIComponent(origin)}&autoplay=1&mute=1&playsinline=1&controls=${room.isHost ? 1 : 0}&start=${Math.floor(room.currentTime)}&rel=0`
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.currentVideo, room?.currentSource, room?.isHost])
 
@@ -940,7 +1064,7 @@ export default function RoomPage() {
             backdropFilter: 'blur(12px)',
           }}>
           <div className="flex items-center gap-2.5">
-            <button onClick={() => { if (session?.user.id) window.localStorage.removeItem(`wto3:lastRoom:${session.user.id}`); router.push('/') }} className="btn-ghost p-2 -ml-2" title="مغادرة الغرفة">
+            <button onClick={() => { socket?.emit('leave_room', { immediate: true }); if (session?.user.id) window.localStorage.removeItem(`wto3:lastRoom:${session.user.id}`); router.push('/') }} className="btn-ghost p-2 -ml-2" title="مغادرة الغرفة">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
@@ -1002,7 +1126,11 @@ export default function RoomPage() {
         <div ref={videoContainerRef}
           data-video-container
           className="md:flex-1 bg-black flex items-center justify-center relative overflow-hidden group"
-          style={videoHeightPx ? { height: isVideoExpanded ? `${Math.round(videoHeightPx * 1.5)}px` : `${videoHeightPx}px`, flexShrink: 0, flexGrow: 0 } : undefined}
+          style={fullscreenFallback
+            ? { position: 'fixed', inset: 0, width: '100vw', height: '100dvh', zIndex: 100 }
+            : videoHeightPx
+              ? { height: isVideoExpanded ? `${Math.round(videoHeightPx * 1.5)}px` : `${videoHeightPx}px`, flexShrink: 0, flexGrow: 0 }
+              : undefined}
         >
           {!room?.currentVideo && (
             <div className="empty-player-state text-center space-y-4 px-6">
@@ -1022,18 +1150,17 @@ export default function RoomPage() {
             <iframe ref={playerRef}
               src={stableYoutubeUrl}
               className="w-full h-full"
-              style={{ pointerEvents: room.isHost ? 'auto' : 'none' }}
+              style={{ pointerEvents: room.isHost ? 'auto' : 'none', ...(fullscreenFallback ? { width: '100vw', height: '100dvh' } : {}) }}
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
               title="YouTube video player"
               onLoad={() => {
+                youtubeReadyRef.current = false
+                pendingYoutubeSyncRef.current = true
+                lastPlayerState.current = -1
                 const target = playerRef.current?.contentWindow
                 if (!target) return
-                setTimeout(() => {
-                  target.postMessage(JSON.stringify({ event: 'listening' }), '*')
-                  target.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [room.currentTime || 0, true] }), '*')
-                  target.postMessage(JSON.stringify({ event: 'command', func: isPlayingRef.current ? 'playVideo' : 'pauseVideo', args: [] }), '*')
-                }, 250)
+                target.postMessage(JSON.stringify({ event: 'listening' }), YOUTUBE_ORIGIN)
               }}
             />
           )}
@@ -1041,7 +1168,7 @@ export default function RoomPage() {
             <video key={room.currentVideo} ref={videoRef}
               src={`${SERVER}/api/rooms/${slug}/stream`}
               controls={room.isHost} className="w-full h-full"
-              style={{ pointerEvents: room.isHost ? 'auto' : 'none' }}
+              style={{ pointerEvents: room.isHost ? 'auto' : 'none', ...(fullscreenFallback ? { width: '100vw', height: '100dvh' } : {}) }}
               playsInline
               onPlay={handlePlay} onPause={handlePause} onSeeked={handleSeeked} />
            )}
@@ -1051,14 +1178,41 @@ export default function RoomPage() {
               ref={cineSrcRef}
               src={cineSrcUrl(room.currentVideo)!}
               className="w-full h-full"
-              style={{ pointerEvents: room.isHost ? 'auto' : 'none' }}
+              style={{ pointerEvents: room.isHost ? 'auto' : 'none', ...(fullscreenFallback ? { width: '100vw', height: '100dvh' } : {}) }}
               title="CineSrc player"
-              sandbox="allow-scripts allow-same-origin allow-presentation"
+              sandbox="allow-scripts allow-same-origin allow-presentation allow-pointer-lock"
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
             />
           )}
-          {room?.currentVideo && !room.isHost && (
+          {/* Viewer unlock overlay — shown once so browser autoplay policy is satisfied */}
+          {room?.currentVideo && room.currentSource === 'movie' && !room.isHost && viewerNeedsUnlock && (
+            <button
+              type="button"
+              className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 w-full h-full"
+              style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(3px)', cursor: 'pointer', border: 'none' }}
+              onClick={() => {
+                // Execute queued commands now that we have a real user gesture
+                for (const action of pendingCineSrcActionsRef.current) {
+                  sendCineSrcCommand(action.cmd, action.args)
+                }
+                pendingCineSrcActionsRef.current = []
+                setViewerNeedsUnlock(false)
+              }}
+            >
+              <div style={{
+                width: 72, height: 72, borderRadius: '50%',
+                background: C.gold, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 32px rgba(233,183,125,0.55)',
+              }}>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill={C.ink}><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
+              <span style={{ color: C.dark, fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 600 }}>
+                انقر للمشاهدة
+              </span>
+            </button>
+          )}
+          {room?.currentVideo && !room.isHost && !viewerNeedsUnlock && (
             <div className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-lg text-xs"
               style={{ background: 'rgba(14,18,24,.78)', color: C.textFaded, pointerEvents: 'none' }}>
               التحكم بالمشغل للمضيف
@@ -1069,6 +1223,17 @@ export default function RoomPage() {
             style={{ background: C.ink, color: C.white, border: '1px solid ' + C.red, borderRadius: 9 }}>
               {playerError}
             </div>
+          )}
+          {room?.currentSource === 'youtube' && room.currentVideo && (
+            <button type="button" onClick={toggleYoutubeMute}
+              title={youtubeMuted ? 'تشغيل الصوت' : 'كتم الصوت'}
+              aria-label={youtubeMuted ? 'تشغيل صوت يوتيوب' : 'كتم صوت يوتيوب'}
+              className="absolute bottom-3 left-3 w-10 h-10 flex items-center justify-center opacity-90 hover:opacity-100 transition-all duration-100 z-20"
+              style={{ background: C.ink, border: '1px solid ' + C.border, color: C.gold }}>
+              {youtubeMuted
+                ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="m17 9 5 6m0-6-5 6"/></svg>
+                : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7m3-10a9 9 0 0 1 0 13"/></svg>}
+            </button>
           )}
            {/* Expand/collapse button */}
            <button onClick={() => setIsVideoExpanded(!isVideoExpanded)} title={isVideoExpanded ? 'تصغير الفيديو' : 'تكبير الفيديو'}
@@ -1081,7 +1246,8 @@ export default function RoomPage() {
           </button>
 
            {/* Fullscreen button */}
-           <button onClick={toggleFullscreen} title={isFullscreen ? 'تصغير' : 'تكبير'}
+           <button onClick={toggleFullscreen} title={isFullscreen ? 'الخروج من ملء الشاشة' : 'ملء الشاشة'}
+            aria-label={isFullscreen ? 'الخروج من ملء الشاشة' : 'ملء الشاشة'}
             className="absolute bottom-3 right-3 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-100 z-20"
             style={{ background: C.ink, border: '1px solid ' + C.border, color: C.gold, pointerEvents: 'auto' }}>
             {isFullscreen

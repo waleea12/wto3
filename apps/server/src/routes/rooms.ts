@@ -5,7 +5,7 @@ import { requireAuth, type AuthRequest } from '../middleware/auth'
 import { AppError } from '../middleware/errorHandler'
 import { nanoid } from 'nanoid'
 import axios from 'axios'
-import { roomStates } from '../socket/roomHandlers'
+import { onlineUsers, roomStates } from '../socket/roomHandlers'
 import { ioServer } from '../socket/index'
 import { messageInclude, toChatMessage } from '../lib/chat'
 
@@ -48,8 +48,7 @@ roomRouter.get('/:slug', requireAuth, async (req: AuthRequest, res: Response, ne
       },
     })
     if (!room) throw new AppError(404, 'Room not found')
-    const sockets = ioServer ? await ioServer.in(room.slug).fetchSockets() : []
-    const onlineIds = new Set(sockets.map((socket) => socket.data.userId))
+    const onlineIds = new Set(ioServer ? (await onlineUsers(ioServer, room.slug)).map((user) => user.userId) : [])
     return res.json({
       ...room,
       participants: room.participants.filter((participant) => onlineIds.has(participant.userId)),
@@ -80,8 +79,7 @@ roomRouter.post('/:slug/join', requireAuth, async (req: AuthRequest, res: Respon
         },
       },
     })
-    const sockets = ioServer ? await ioServer.in(room.slug).fetchSockets() : []
-    const onlineIds = new Set(sockets.map((socket) => socket.data.userId))
+    const onlineIds = new Set(ioServer ? (await onlineUsers(ioServer, room.slug)).map((user) => user.userId) : [])
     return res.json({
       ...updatedRoom,
       participants: updatedRoom?.participants.filter((participant) => onlineIds.has(participant.userId)) ?? [],

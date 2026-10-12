@@ -35,7 +35,7 @@ export interface ServerToClientEvents {
 // ── Client → Server ──────────────────────────────────────────────────────────
 export interface ClientToServerEvents {
   join_room: (payload: JoinRoomPayload, cb: (state: SyncState & { queue: QueueItem[]; participants: UserPresencePayload[]; isHost: boolean; hostId: string }) => void) => void
-  leave_room: () => void
+  leave_room: (payload?: { immediate?: boolean }) => void
   play: (payload: PlayPayload) => void
   pause: (payload: PausePayload) => void
   seek: (payload: SeekPayload) => void
@@ -122,6 +122,7 @@ export interface HeartbeatPayload {
   currentTime: number
   buffered: number
   latency: number
+  duration?: number
 }
 
 export interface TransferHostPayload {

@@ -28,7 +28,15 @@ type IoServer = Server<ClientToServerEvents, ServerToClientEvents, InterServerEv
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
 
 // In-memory room state for fast access
-export const roomStates = new Map<string, SyncState & { hostId: string }>()
+type RoomRuntimeState = SyncState & { hostId: string; duration?: number }
+export const roomStates = new Map<string, RoomRuntimeState>()
+
+// A brief browser close or network switch should not announce a departure.
+const PRESENCE_GRACE_MS = 2 * 60 * 1000
+const pendingDepartures = new Map<string, {
+  timer: ReturnType<typeof setTimeout>
+  user: UserPresencePayload
+}>()
 
 // In-memory queue per room
 const roomQueues = new Map<string, QueueItem[]>()
@@ -57,7 +65,18 @@ function systemMsg(msg: string) {
   }
 }
 
-async function onlineUsers(io: IoServer, roomSlug: string): Promise<UserPresencePayload[]> {
+function departureKey(roomSlug: string, userId: string) {
+  return `${roomSlug}:${userId}`
+}
+
+function cancelDeparture(roomSlug: string, userId: string) {
+  const key = departureKey(roomSlug, userId)
+  const pending = pendingDepartures.get(key)
+  if (pending) clearTimeout(pending.timer)
+  pendingDepartures.delete(key)
+}
+
+async function connectedUsers(io: IoServer, roomSlug: string): Promise<UserPresencePayload[]> {
   const sockets = await io.in(roomSlug).fetchSockets()
   const users = new Map<string, UserPresencePayload>()
   for (const current of sockets) {
@@ -70,8 +89,54 @@ async function onlineUsers(io: IoServer, roomSlug: string): Promise<UserPresence
   return [...users.values()]
 }
 
+export async function onlineUsers(io: IoServer, roomSlug: string): Promise<UserPresencePayload[]> {
+  const users = new Map<string, UserPresencePayload>()
+  for (const [key, pending] of pendingDepartures) {
+    if (key.startsWith(`${roomSlug}:`)) users.set(pending.user.userId, pending.user)
+  }
+  for (const user of await connectedUsers(io, roomSlug)) users.set(user.userId, user)
+  return [...users.values()]
+}
+
 async function publishPresence(io: IoServer, roomSlug: string) {
   io.to(roomSlug).emit('presence_updated', await onlineUsers(io, roomSlug))
+}
+
+async function finishDeparture(io: IoServer, roomSlug: string, user: UserPresencePayload) {
+  if (!(await connectedUsers(io, roomSlug)).some((current) => current.userId === user.userId)) {
+    io.to(roomSlug).emit('user_left', user)
+    io.to(roomSlug).emit('chat_message', systemMsg(`${user.userName} left the room 👋`))
+  }
+  await publishPresence(io, roomSlug)
+}
+
+async function depart(io: IoServer, roomSlug: string, user: UserPresencePayload, immediate = false) {
+  if ((await connectedUsers(io, roomSlug)).some((current) => current.userId === user.userId)) return
+  const key = departureKey(roomSlug, user.userId)
+  if (immediate) {
+    cancelDeparture(roomSlug, user.userId)
+    await finishDeparture(io, roomSlug, user)
+  } else if (!pendingDepartures.has(key)) {
+    const timer = setTimeout(() => {
+      pendingDepartures.delete(key)
+      finishDeparture(io, roomSlug, user).catch((error) => console.error('presence grace error:', error))
+    }, PRESENCE_GRACE_MS)
+    pendingDepartures.set(key, { timer, user })
+    await publishPresence(io, roomSlug)
+  }
+}
+
+async function settleFinishedVideo(io: IoServer, roomSlug: string, state: RoomRuntimeState) {
+  if (!state.isPlaying || !state.duration || computeCurrentTime(state) < state.duration - 0.25) return false
+  state.currentTime = Math.max(0, state.duration - 0.25)
+  state.isPlaying = false
+  state.serverTimestamp = Date.now()
+  await prisma.room.update({
+    where: { slug: roomSlug },
+    data: { currentTime: state.currentTime, isPlaying: false },
+  })
+  io.to(roomSlug).emit('pause', { currentTime: state.currentTime, serverTimestamp: state.serverTimestamp })
+  return true
 }
 
 export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
@@ -95,7 +160,9 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
       const previousRoom = socket.data.roomSlug
       if (previousRoom && previousRoom !== roomSlug) {
         socket.leave(previousRoom)
-        await publishPresence(io, previousRoom)
+        await depart(io, previousRoom, {
+          userId, userName: socket.data.userName, userAvatar: socket.data.userAvatar,
+        }, true)
       }
 
       // Upsert participant
@@ -107,6 +174,7 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
 
       socket.data.roomSlug = roomSlug
       socket.join(roomSlug)
+      cancelDeparture(roomSlug, userId)
 
       // Initialize or get room state
       const isHostJoining = room.hostId === userId
@@ -129,6 +197,7 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
       }
 
       const state = roomStates.get(roomSlug)!
+      await settleFinishedVideo(io, roomSlug, state)
       const queue = sortedQueue(getQueue(roomSlug))
 
       // Notify other users in the room
@@ -161,35 +230,17 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
   })
 
   // LEAVE ROOM
-  socket.on('leave_room', async () => {
+  socket.on('leave_room', async (payload) => {
     const roomSlug = socket.data.roomSlug
     if (!roomSlug) return
 
     socket.leave(roomSlug)
     socket.data.roomSlug = ''
-    const stillOnline = (await onlineUsers(io, roomSlug)).some((user) => user.userId === socket.data.userId)
-    if (!stillOnline) {
-      socket.to(roomSlug).emit('user_left', {
-        userId: socket.data.userId,
-        userName: socket.data.userName,
-        userAvatar: socket.data.userAvatar,
-      })
-      io.to(roomSlug).emit('chat_message', systemMsg(`${socket.data.userName} left the room 👋`))
-      const state = roomStates.get(roomSlug)
-      if (state?.hostId === socket.data.userId && state.isPlaying) {
-        state.currentTime = computeCurrentTime(state)
-        state.isPlaying = false
-        state.serverTimestamp = Date.now()
-        await prisma.room.update({
-          where: { slug: roomSlug },
-          data: { currentTime: state.currentTime, isPlaying: false },
-        })
-        io.to(roomSlug).emit('pause', {
-          currentTime: state.currentTime, serverTimestamp: state.serverTimestamp,
-        })
-      }
-    }
-    await publishPresence(io, roomSlug)
+    await depart(io, roomSlug, {
+      userId: socket.data.userId,
+      userName: socket.data.userName,
+      userAvatar: socket.data.userAvatar,
+    }, payload?.immediate === true)
   })
 
   // PLAY
@@ -279,6 +330,7 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
     state.currentVideo = payload.videoId
     state.currentSource = payload.source
     state.currentTime = 0
+    state.duration = undefined
     state.isPlaying = payload.source !== 'movie'
     state.serverTimestamp = Date.now()
     const tokenToUse = payload.driveToken || (socket.data as any).driveToken
@@ -430,20 +482,27 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
   })
 
   // HEARTBEAT - latency compensation
-  socket.on('heartbeat', (payload: HeartbeatPayload) => {
+  socket.on('heartbeat', async (payload: HeartbeatPayload) => {
     const roomSlug = socket.data.roomSlug
     if (!roomSlug) return
 
     const state = roomStates.get(roomSlug)
-    if (!state || state.isPlaying === false) return
+    if (!state || !Number.isFinite(payload?.currentTime) || payload.currentTime < 0) return
 
     // Host is the source of truth; never correct the host.
     // Instead, silently align the server's estimated time with the host's actual time.
     if (isHost(socket, roomSlug)) {
+      if (state.currentSource === 'youtube' && typeof payload.duration === 'number' && Number.isFinite(payload.duration) && payload.duration > 0) {
+        state.duration = payload.duration
+      }
+      if (!state.isPlaying) return
       state.currentTime = payload.currentTime
       state.serverTimestamp = Date.now()
+      await settleFinishedVideo(io, roomSlug, state)
       return
     }
+
+    if (!state.isPlaying || await settleFinishedVideo(io, roomSlug, state)) return
 
     const expectedTime = computeCurrentTime(state)
     const drift = Math.abs(payload.currentTime - expectedTime)
@@ -485,56 +544,15 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
   socket.on('disconnect', async () => {
     const roomSlug = socket.data.roomSlug
     if (!roomSlug) return
-    setTimeout(async () => {
-      try {
-        const users = await onlineUsers(io, roomSlug)
-        if (!users.some((user) => user.userId === socket.data.userId)) {
-          io.to(roomSlug).emit('user_left', {
-            userId: socket.data.userId,
-            userName: socket.data.userName,
-            userAvatar: socket.data.userAvatar,
-          })
-          io.to(roomSlug).emit('chat_message', systemMsg(`${socket.data.userName} left the room 👋`))
-          const state = roomStates.get(roomSlug)
-          if (state?.hostId === socket.data.userId && state.isPlaying) {
-            state.currentTime = computeCurrentTime(state)
-            state.isPlaying = false
-            state.serverTimestamp = Date.now()
-            await prisma.room.update({
-              where: { slug: roomSlug },
-              data: { currentTime: state.currentTime, isPlaying: false },
-            })
-            io.to(roomSlug).emit('pause', {
-              currentTime: state.currentTime, serverTimestamp: state.serverTimestamp,
-            })
-          }
-        }
-        io.to(roomSlug).emit('presence_updated', users)
-      } catch (error) {
-        console.error('disconnect presence error:', error)
-      }
-    }, 1200)
-
-    // Wait 5 seconds before checking if the room is empty to allow for page refreshes
-    setTimeout(async () => {
-      try {
-        const socketsInRoom = await io.in(roomSlug).fetchSockets()
-        if (socketsInRoom.length === 0) {
-          const state = roomStates.get(roomSlug)
-          if (state) {
-            const currentTime = computeCurrentTime(state)
-            await prisma.room.update({
-              where: { slug: roomSlug }, data: { currentTime, isPlaying: false },
-            })
-            state.currentTime = currentTime
-            state.isPlaying = false
-            state.serverTimestamp = Date.now()
-          }
-        }
-      } catch (error) {
-        console.error('empty room cleanup error:', error)
-      }
-    }, 5000)
+    try {
+      await depart(io, roomSlug, {
+        userId: socket.data.userId,
+        userName: socket.data.userName,
+        userAvatar: socket.data.userAvatar,
+      })
+    } catch (error) {
+      console.error('disconnect presence error:', error)
+    }
   })
 }
 
@@ -556,6 +574,7 @@ async function playNextInQueue(io: IoServer, roomSlug: string) {
     state.currentVideo = next.videoId
     state.currentSource = next.source
     state.currentTime = 0
+    state.duration = undefined
     state.isPlaying = false
     state.serverTimestamp = Date.now()
   }
@@ -579,7 +598,7 @@ async function playNextInQueue(io: IoServer, roomSlug: string) {
 }
 
 // Compute current playback position accounting for elapsed time
-function computeCurrentTime(state: SyncState & { hostId: string }): number {
+function computeCurrentTime(state: RoomRuntimeState): number {
   if (!state.isPlaying) return state.currentTime
   const elapsed = (Date.now() - state.serverTimestamp) / 1000
   return state.currentTime + elapsed
