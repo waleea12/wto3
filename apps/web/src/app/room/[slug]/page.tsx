@@ -613,7 +613,7 @@ export default function RoomPage() {
       }
     })
     return () => cancelAnimationFrame(frame)
-  }, [messages, sidebarTab])
+  }, [messages, sidebarTab, isChatFocused])
 
   useEffect(() => {
     if (!socket || !connected) return
@@ -752,8 +752,10 @@ export default function RoomPage() {
     setChatInput('')
     socket.emit('typing', { userId: session?.user.id ?? '', userName: session?.user.name ?? '', isTyping: false })
     if (window.matchMedia('(max-width: 767px)').matches) {
-      setIsChatFocused(true)
-      mobileChatInputRef.current?.focus({ preventScroll: true })
+      mobileChatInputRef.current?.blur()
+      // Let the keyboard close before returning the composer to the chat pane.
+      if (chatBlurTimer.current) clearTimeout(chatBlurTimer.current)
+      chatBlurTimer.current = setTimeout(() => setIsChatFocused(false), 400)
     }
   }
 
