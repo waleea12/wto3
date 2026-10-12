@@ -591,6 +591,8 @@ export default function RoomPage() {
         pendingYoutubeSyncRef.current = true
         if (roomRef.current?.currentVideo === state.currentVideo) syncYoutubePlayer()
       }
+      // Reset unlock overlay only for movie/series source
+      if (!state.isHost && state.currentVideo && state.currentSource === 'movie') setViewerUnlocked(false)
       setRoom((prev) => ({
         isHost: state.isHost ?? prev?.isHost ?? false,
         hostId: state.hostId ?? prev?.hostId ?? '',
@@ -665,7 +667,7 @@ export default function RoomPage() {
       youtubeDurationRef.current = 0
       youtubeEndedLocallyRef.current = false
       lastPlayerState.current = -1
-      setViewerUnlocked(false)  // reset overlay for new movie
+      if (p.source === 'movie') setViewerUnlocked(false)  // show overlay for new movie
       setRoom((r) => r ? { ...r, currentVideo: p.videoId, currentSource: p.source as VideoSource, currentTime: 0, isPlaying: p.source !== 'movie' } : r)
     })
     socket.on('chat_message', (msg) => setMessages((prev) => prev.some((item) => item.id === msg.id) ? prev : [...prev, msg]))
@@ -1169,14 +1171,23 @@ export default function RoomPage() {
               allowFullScreen
             />
           )}
-          {/* Viewer unlock overlay — appears immediately for non-hosts, one tap starts synced playback */}
+          {/* Viewer unlock overlay — movie/series source only.
+               Mobile browsers block autoplay in iframes without a real user gesture.
+               Show a one-time tap overlay so the viewer can unlock playback.    */}
           {room?.currentVideo && room.currentSource === 'movie' && !room.isHost && !viewerUnlocked && (
             <button
               type="button"
               className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 w-full h-full"
-              style={{ background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(4px)', cursor: 'pointer', border: 'none' }}
+              style={{
+                background: 'rgba(0,0,0,0.80)',
+                backdropFilter: 'blur(6px)',
+                WebkitBackdropFilter: 'blur(6px)',
+                cursor: 'pointer',
+                border: 'none',
+                touchAction: 'manipulation',
+              }}
               onClick={() => {
-                // Real user gesture → browser allows autoplay in the iframe
+                // Real user gesture → browser now allows postMessage-triggered autoplay
                 const state = roomRef.current
                 if (state?.currentTime) sendCineSrcCommand('seek', [state.currentTime])
                 if (state?.isPlaying) sendCineSrcCommand('play')
@@ -1184,23 +1195,23 @@ export default function RoomPage() {
               }}
             >
               <div style={{
-                width: 76, height: 76, borderRadius: '50%',
+                width: 82, height: 82, borderRadius: '50%',
                 background: C.gold, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 40px rgba(233,183,125,0.6)',
+                boxShadow: '0 0 48px rgba(233,183,125,0.7)',
               }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill={C.ink}><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <svg width="34" height="34" viewBox="0 0 24 24" fill={C.ink}><polygon points="5 3 19 12 5 21 5 3"/></svg>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <span style={{ color: C.dark, fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: '#fff', fontFamily: 'var(--font-mono)', fontSize: 17, fontWeight: 700 }}>
                   انقر للمشاهدة
                 </span>
-                <span style={{ color: C.textFaded, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
-                  اضغط مرة واحدة فقط لتشغيل الفيلم
+                <span style={{ color: 'rgba(255,255,255,0.55)', fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                  اضغط مرة واحدة فقط
                 </span>
               </div>
             </button>
           )}
-          {room?.currentVideo && !room.isHost && viewerUnlocked && (
+          {room?.currentVideo && !room.isHost && (room.currentSource !== 'movie' || viewerUnlocked) && (
             <div className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-lg text-xs"
               style={{ background: 'rgba(14,18,24,.78)', color: C.textFaded, pointerEvents: 'none' }}>
               التحكم بالمشغل للمضيف
