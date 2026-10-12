@@ -402,8 +402,8 @@ export default function RoomPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [sidebarTab, setSidebarTab] = useState<'chat' | 'queue'>('chat')
   const [isChatFocused, setIsChatFocused] = useState(false)
-const [videoHeightPx, setVideoHeightPx] = useState<number | null>(null)
-const [isVideoExpanded, setIsVideoExpanded] = useState(false)
+  const [videoHeightPx, setVideoHeightPx] = useState<number | null>(null)
+  const [isVideoExpanded, setIsVideoExpanded] = useState(false)
 
 
   const playerRef = useRef<HTMLIFrameElement>(null)
@@ -412,12 +412,19 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
   const roomRef = useRef<RoomState | null>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const videoContainerRef = useRef<HTMLDivElement>(null)
-  const chatEndRef = useRef<HTMLDivElement>(null)
+  const mobileChatScrollRef = useRef<HTMLDivElement>(null)
+  const desktopChatScrollRef = useRef<HTMLDivElement>(null)
+  const mobileChatInputRef = useRef<HTMLInputElement>(null)
+  const chatBlurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const heartbeatInterval = useRef<ReturnType<typeof setInterval> | null>(null)
   const isPlayingRef = useRef<boolean>(false)
   const ytCurrentTimeRef = useRef<number>(0)
   const roomSourceRef = useRef<VideoSource>(null)
+
+  useEffect(() => () => {
+    if (chatBlurTimer.current) clearTimeout(chatBlurTimer.current)
+  }, [])
 
   useEffect(() => {
     if (session?.user.serverToken && !connected) connect(session.user.serverToken)
@@ -561,7 +568,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
       cineSrcTimeRef.current = 0
       setRoom((r) => r ? { ...r, currentVideo: p.videoId, currentSource: p.source as VideoSource, currentTime: 0, isPlaying: p.source !== 'movie' } : r)
     })
-    socket.on('chat_message', (msg: any) => { setMessages((prev) => [...prev, msg as ChatMessage]); chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) })
+    socket.on('chat_message', (msg: any) => setMessages((prev) => [...prev, msg as ChatMessage]))
     socket.on('typing', (p: any) => {
       if (p.userId === session?.user.id) return
       setTypingUsers((prev) => p.isTyping ? [...new Set([...prev, p.userName])] : prev.filter((u) => u !== p.userName))
@@ -594,14 +601,18 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
       .then(({ data }) => setParticipants(data.participants ?? []))
       .catch(() => router.push('/'))
     axios.get(`${SERVER}/api/rooms/${slug}/messages`, { headers })
-      .then(({ data }) => { setMessages(data); setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 150) })
+      .then(({ data }) => setMessages(data))
   }, [slug, session, router])
 
-  // Auto-scroll to bottom whenever messages change or tab switches to chat
+  // Scroll only the message panes; scrollIntoView also moves the mobile page.
   useEffect(() => {
-    if (sidebarTab === 'chat') {
-      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 80)
-    }
+    if (sidebarTab !== 'chat') return
+    const frame = requestAnimationFrame(() => {
+      for (const pane of [mobileChatScrollRef.current, desktopChatScrollRef.current]) {
+        if (pane) pane.scrollTop = pane.scrollHeight
+      }
+    })
+    return () => cancelAnimationFrame(frame)
   }, [messages, sidebarTab])
 
   useEffect(() => {
@@ -736,9 +747,25 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
   function sendMessage(e: React.FormEvent) {
     e.preventDefault()
     if (!chatInput.trim() || !socket) return
+    if (chatBlurTimer.current) clearTimeout(chatBlurTimer.current)
     socket.emit('chat_message', { message: chatInput.trim() })
     setChatInput('')
     socket.emit('typing', { userId: session?.user.id ?? '', userName: session?.user.name ?? '', isTyping: false })
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      setIsChatFocused(true)
+      mobileChatInputRef.current?.focus({ preventScroll: true })
+    }
+  }
+
+  function handleMobileChatFocus() {
+    if (chatBlurTimer.current) clearTimeout(chatBlurTimer.current)
+    setIsChatFocused(true)
+  }
+
+  function handleMobileChatBlur() {
+    // Keep the composer in place until a tap on Send has finished.
+    if (chatBlurTimer.current) clearTimeout(chatBlurTimer.current)
+    chatBlurTimer.current = setTimeout(() => setIsChatFocused(false), 400)
   }
 
   function onTyping(val: string) {
@@ -780,16 +807,18 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.currentVideo, room?.currentSource])
 
-  // Keep --app-height CSS variable in sync with the visual viewport
+  // Match the room to the visible viewport while the mobile keyboard is open.
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const vv = (window as any).visualViewport
+    const vv = window.visualViewport
 
     function setAppHeight() {
       const height = vv ? vv.height : window.innerHeight
-      document.documentElement.style.setProperty('--app-height', `${height}px`)
-      if (vv && vv.offsetTop > 0) {
-        window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior })
+      document.documentElement.style.setProperty('--app-height', `${Math.round(height)}px`)
+      document.documentElement.style.setProperty('--app-top', `${Math.round(vv?.offsetTop ?? 0)}px`)
+      if (document.activeElement === mobileChatInputRef.current) {
+        const pane = mobileChatScrollRef.current
+        if (pane) pane.scrollTop = pane.scrollHeight
       }
     }
 
@@ -801,10 +830,16 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
       return () => {
         vv.removeEventListener('resize', setAppHeight)
         vv.removeEventListener('scroll', setAppHeight)
+        document.documentElement.style.removeProperty('--app-height')
+        document.documentElement.style.removeProperty('--app-top')
       }
     } else {
       window.addEventListener('resize', setAppHeight)
-      return () => window.removeEventListener('resize', setAppHeight)
+      return () => {
+        window.removeEventListener('resize', setAppHeight)
+        document.documentElement.style.removeProperty('--app-height')
+        document.documentElement.style.removeProperty('--app-top')
+      }
     }
   }, [])
 
@@ -883,7 +918,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
         <div ref={videoContainerRef}
           data-video-container
           className="md:flex-1 bg-black flex items-center justify-center relative overflow-hidden group"
-          style={videoHeightPx ? { height: isVideoExpanded ? `${Math.round(videoHeightPx * 1.5)}px` : `${videoHeightPx}px`, flexShrink: 0, flexGrow: 0 } : undefined}
+          style={videoHeightPx ? { height: isChatFocused ? 'clamp(0px, calc(var(--app-height) - 220px), 96px)' : isVideoExpanded ? `${Math.round(videoHeightPx * 1.5)}px` : `${videoHeightPx}px`, flexShrink: 0, flexGrow: 0 } : undefined}
         >
           {!room?.currentVideo && (
             <div className="text-center space-y-4 px-6">
@@ -1031,7 +1066,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
 
            {sidebarTab === 'chat' && (
             <div className="flex-1 flex flex-col min-h-0">
-              <div className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin" style={{ minHeight: 0 }}>
+              <div ref={mobileChatScrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin" style={{ minHeight: 0, overscrollBehavior: 'contain' }}>
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center space-y-2 py-6">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,46,0.10)" strokeWidth="1.5">
@@ -1084,21 +1119,23 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
                     </div>
                   </div>
                 )}
-                <div ref={chatEndRef} />
               </div>
               <div id="chat-input-bar" className="p-3 flex-shrink-0 chat-input-area chat-input-bar" style={{ borderTop: '2px solid ' + C.border }}>
                 <form onSubmit={sendMessage} className="flex gap-2">
                   <input 
                     id="chat-input-mobile" 
+                    ref={mobileChatInputRef}
                     value={chatInput} 
                     onChange={(e) => onTyping(e.target.value)}
-                    onFocus={() => setIsChatFocused(true)}
-                    onBlur={() => setIsChatFocused(false)}
+                    onFocus={handleMobileChatFocus}
+                    onBlur={handleMobileChatBlur}
                     placeholder="Send a message..." 
-                    className="input-field flex-1 py-2" 
+                    enterKeyHint="send"
+                    className="input-field flex-1 min-w-0 py-2"
                   />
                   <button id="send-message-btn-mobile" type="submit" disabled={!chatInput.trim()}
-                    className="w-9 h-9 flex items-center justify-center transition-all duration-100 flex-shrink-0 disabled:opacity-35"
+                    aria-label="Send message"
+                    className="w-11 h-11 flex items-center justify-center transition-all duration-100 flex-shrink-0 disabled:opacity-35"
                     style={{ background: C.gold, border: '2px solid ' + C.border }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.dark} strokeWidth="2.5">
                       <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -1180,7 +1217,7 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
         {/* Chat panel */}
         {sidebarTab === 'chat' && (
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin" style={{ minHeight: 0 }}>
+            <div ref={desktopChatScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin" style={{ minHeight: 0 }}>
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-2 py-8">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,46,0.10)" strokeWidth="1.5">
@@ -1233,7 +1270,6 @@ const [isVideoExpanded, setIsVideoExpanded] = useState(false)
                   </div>
                 </div>
               )}
-              <div ref={chatEndRef} />
             </div>
             <div id="chat-input-bar" className="p-3 flex-shrink-0 chat-input-bar" style={{ borderTop: '2px solid ' + C.border }}>
               <form onSubmit={sendMessage} className="flex gap-2">

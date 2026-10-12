@@ -387,43 +387,18 @@
   animation: pixelFloat 3s ease-in-out infinite;
 }
 
-/* ── Rave-style mobile layout helpers ────────────────────────────────────── */
+/* ── Mobile room layout ──────────────────────────────────────────────────── */
 
 @media (max-width: 767px) {
-  .room-layout.is-chat-focused .mobile-video-h {
-    height: 12vh;
-    min-height: 12vh;
-    flex-basis: 12vh;
-  }
-  
   .room-layout.is-chat-focused .host-controls {
     display: none;
   }
 }
 
-@media (min-width: 768px) {
-  .mobile-video-h {
-    height: auto;
-    flex-shrink: 1;
-    flex-grow: 1;
-    flex-basis: auto;
-  }
-}
-
-/* ── Mobile keyboard fix ─────────────────────────────────────────────────── */
-.mobile-keyboard-fix {
-  overflow-anchor: none;
-}
-
-.chat-input-bar {
-  transition: transform 0.15s ease-out;
-  will-change: transform;
-}
-
 @media (max-width: 767px) {
   .room-layout {
     position: fixed;
-    top: 0;
+    top: var(--app-top, 0px);
     left: 0;
     right: 0;
     height: var(--app-height);
@@ -432,11 +407,16 @@
     flex-direction: column;
     overflow: hidden;
     overscroll-behavior: none;
+    overflow-anchor: none;
   }
 
   .chat-input-area {
     touch-action: manipulation;
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+
+  .room-layout.is-chat-focused .chat-input-area {
+    padding-bottom: 0.5rem;
   }
 
   #chat-input-mobile,
