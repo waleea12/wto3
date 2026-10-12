@@ -390,15 +390,9 @@
 /* ── Mobile room layout ──────────────────────────────────────────────────── */
 
 @media (max-width: 767px) {
-  .room-layout.is-chat-focused .host-controls {
-    display: none;
-  }
-}
-
-@media (max-width: 767px) {
   .room-layout {
     position: fixed;
-    top: var(--app-top, 0px);
+    top: 0;
     left: 0;
     right: 0;
     height: var(--app-height);
@@ -416,6 +410,12 @@
   }
 
   .room-layout.is-chat-focused .chat-input-area {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: var(--keyboard-offset, 0px);
+    z-index: 40;
+    background: #fff;
     padding-bottom: 0.5rem;
   }
 

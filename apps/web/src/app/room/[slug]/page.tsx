@@ -807,15 +807,27 @@ export default function RoomPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.currentVideo, room?.currentSource])
 
-  // Match the room to the visible viewport while the mobile keyboard is open.
+  // Keep the room at its normal height; only lift the composer above the keyboard.
   useEffect(() => {
     if (typeof window === 'undefined') return
     const vv = window.visualViewport
+    let roomHeight = vv?.height ?? window.innerHeight
+    let roomWidth = window.innerWidth
 
     function setAppHeight() {
-      const height = vv ? vv.height : window.innerHeight
-      document.documentElement.style.setProperty('--app-height', `${Math.round(height)}px`)
-      document.documentElement.style.setProperty('--app-top', `${Math.round(vv?.offsetTop ?? 0)}px`)
+      const visibleHeight = vv?.height ?? window.innerHeight
+      const keyboardOpen = document.activeElement === mobileChatInputRef.current
+      if (window.innerWidth !== roomWidth) {
+        roomWidth = window.innerWidth
+        roomHeight = Math.max(visibleHeight, window.innerHeight)
+      } else if (!keyboardOpen && visibleHeight >= roomHeight * 0.8) {
+        roomHeight = visibleHeight
+      }
+      const keyboardOffset = keyboardOpen
+        ? Math.max(0, window.innerHeight - (visibleHeight + (vv?.offsetTop ?? 0)))
+        : 0
+      document.documentElement.style.setProperty('--app-height', `${Math.round(roomHeight)}px`)
+      document.documentElement.style.setProperty('--keyboard-offset', `${Math.round(keyboardOffset)}px`)
       if (document.activeElement === mobileChatInputRef.current) {
         const pane = mobileChatScrollRef.current
         if (pane) pane.scrollTop = pane.scrollHeight
@@ -831,14 +843,14 @@ export default function RoomPage() {
         vv.removeEventListener('resize', setAppHeight)
         vv.removeEventListener('scroll', setAppHeight)
         document.documentElement.style.removeProperty('--app-height')
-        document.documentElement.style.removeProperty('--app-top')
+        document.documentElement.style.removeProperty('--keyboard-offset')
       }
     } else {
       window.addEventListener('resize', setAppHeight)
       return () => {
         window.removeEventListener('resize', setAppHeight)
         document.documentElement.style.removeProperty('--app-height')
-        document.documentElement.style.removeProperty('--app-top')
+        document.documentElement.style.removeProperty('--keyboard-offset')
       }
     }
   }, [])
@@ -918,7 +930,7 @@ export default function RoomPage() {
         <div ref={videoContainerRef}
           data-video-container
           className="md:flex-1 bg-black flex items-center justify-center relative overflow-hidden group"
-          style={videoHeightPx ? { height: isChatFocused ? 'clamp(0px, calc(var(--app-height) - 220px), 96px)' : isVideoExpanded ? `${Math.round(videoHeightPx * 1.5)}px` : `${videoHeightPx}px`, flexShrink: 0, flexGrow: 0 } : undefined}
+          style={videoHeightPx ? { height: isVideoExpanded ? `${Math.round(videoHeightPx * 1.5)}px` : `${videoHeightPx}px`, flexShrink: 0, flexGrow: 0 } : undefined}
         >
           {!room?.currentVideo && (
             <div className="text-center space-y-4 px-6">
