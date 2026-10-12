@@ -1,19 +1,19 @@
 'use client'
 import { useEffect, useRef, useState, useCallback } from 'react'
 
-// ── Colour tokens (same palette as room page) ────────────────────────────────
+// Shared cinema palette.
 const C = {
-  gold:       'rgba(210,170,80,0.88)',
-  goldFaint:  'rgba(200,165,70,0.12)',
-  goldBorder: 'rgba(200,160,60,0.20)',
-  text90:     'rgba(225,210,175,0.92)',
-  text70:     'rgba(210,195,160,0.70)',
-  text50:     'rgba(200,185,150,0.50)',
-  text30:     'rgba(200,180,135,0.30)',
-  text20:     'rgba(200,180,135,0.20)',
-  bgPanel:    'rgba(6,8,18,0.98)',
-  border:     'rgba(200,170,100,0.10)',
-  borderSub:  'rgba(200,170,100,0.07)',
+  gold:       'rgba(233,183,125,0.96)',
+  goldFaint:  'rgba(233,183,125,0.12)',
+  goldBorder: 'rgba(233,183,125,0.25)',
+  text90:     '#f6f3ed',
+  text70:     'rgba(225,229,234,0.78)',
+  text50:     'rgba(210,218,227,0.57)',
+  text30:     'rgba(210,218,227,0.39)',
+  text20:     'rgba(210,218,227,0.24)',
+  bgPanel:    '#151b24',
+  border:     'rgba(255,255,255,0.12)',
+  borderSub:  'rgba(255,255,255,0.08)',
 }
 
 const IMG_BASE = 'https://image.tmdb.org/t/p'
@@ -503,7 +503,7 @@ export default function MovieLibrary({ isHost, onPlay, onClose }: MovieLibraryPr
                   }}
                 >{t === 'movie' ? '🎬 أفلام' : '📺 مسلسلات'}</button>
               ))}
-              <button onClick={onClose}
+              <button onClick={onClose} aria-label="إغلاق مكتبة الأفلام"
                 style={{ width: 28, height: 28, borderRadius: 5, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)', color: C.text50, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
@@ -525,7 +525,7 @@ export default function MovieLibrary({ isHost, onPlay, onClose }: MovieLibraryPr
                 style={{ paddingLeft: 36, paddingRight: query ? 36 : 14, width: '100%' }}
               />
               {query && (
-                <button onClick={() => { setQuery(''); setResults([]) }}
+                <button onClick={() => { setQuery(''); setResults([]) }} aria-label="مسح البحث"
                   style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: C.text30, cursor: 'pointer', padding: 2 }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>

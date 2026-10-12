@@ -40,18 +40,19 @@ function formatDate(iso: string) {
 }
 
 const C = {
-  dark:      '#1a1a2e',
-  gold:      '#FFC940',
-  teal:      '#26C6DA',
-  white:     '#ffffff',
-  offWhite:  '#f8f8f8',
-  lightGray: '#f0f0f0',
-  textFaded:'rgba(26,26,46,0.55)',
-  textFaint: 'rgba(26,26,46,0.30)',
-  textSubtle:'rgba(26,26,46,0.20)',
-  border:    '#1a1a2e',
+  dark:      '#f6f3ed',
+  ink:       '#16120e',
+  gold:      '#e9b77d',
+  teal:      '#8acbd1',
+  white:     '#f6f3ed',
+  offWhite:  '#1c2430',
+  lightGray: '#252e3a',
+  textFaded:'rgba(230,234,238,0.68)',
+  textFaint: 'rgba(230,234,238,0.46)',
+  textSubtle:'rgba(230,234,238,0.22)',
+  border:    'rgba(255,255,255,0.13)',
   blue:      '#4285F4',
-  shadowSm:  '2px 2px 0px #1a1a2e',
+  shadowSm:  '0 7px 18px rgba(0,0,0,0.18)',
 }
 
 export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBrowserProps) {
@@ -138,7 +139,7 @@ export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBr
         <div className="flex items-center gap-3 px-5 py-4 flex-shrink-0"
           style={{ borderBottom: '2px solid ' + C.border }}>
           <div className="w-8 h-8 flex items-center justify-center flex-shrink-0"
-            style={{ background: '#fff', border: '2px solid ' + C.border }}>
+            style={{ background: C.offWhite, border: '1px solid ' + C.border, borderRadius: 9 }}>
             <svg width="15" height="15" viewBox="0 0 87.3 78" fill="none">
               <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0a15.4 15.4 0 0 0 2.1 7.85l4.5-6z" fill="#0066da" transform="scale(0.8)"/>
               <path d="M43.65 25L29.9 1.2a15.4 15.4 0 0 0-3.3 3.3L2.1 45.5A15.35 15.35 0 0 0 0 53.0h27.5L43.65 25z" fill="#00ac47" transform="scale(0.8)"/>
@@ -154,7 +155,7 @@ export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBr
           </div>
           <button onClick={onClose}
             className="w-7 h-7 flex items-center justify-center transition-all duration-100"
-            style={{ background: '#fff', color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm }}>
+            style={{ background: C.offWhite, color: C.dark, border: '1px solid ' + C.border, borderRadius: 8 }}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -195,7 +196,7 @@ export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBr
 
           {error && (
             <div className="m-4 p-3 text-sm"
-              style={{ background: '#FFF5F5', border: '2px solid #FF5F57', color: '#CC0000', fontFamily: 'var(--font-mono)' }}>
+              style={{ background: 'rgba(233,128,128,.12)', border: '1px solid rgba(233,128,128,.4)', borderRadius: 9, color: '#f2b0b0', fontFamily: 'var(--font-mono)' }}>
               ⚠️ {error}
             </div>
           )}
@@ -242,17 +243,17 @@ export default function DriveBrowser({ accessToken, onSelect, onClose }: DriveBr
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: isSelected ? C.dark : C.dark, fontFamily: 'var(--font-mono)' }}>
+                    <p className="text-sm font-semibold truncate" style={{ color: isSelected ? C.ink : C.dark, fontFamily: 'var(--font-mono)' }}>
                       {file.name}
                     </p>
-                    <p className="text-xs mt-0.5" style={{ color: C.textFaded }}>
+                    <p className="text-xs mt-0.5" style={{ color: isSelected ? C.ink : C.textFaded }}>
                       {formatDate(file.modifiedTime)}{file.size ? ` · ${formatSize(file.size)}` : ''}
                     </p>
                   </div>
 
                   {/* Check */}
                   {isSelected && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.dark} strokeWidth="3" className="flex-shrink-0">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth="3" className="flex-shrink-0">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                   )}

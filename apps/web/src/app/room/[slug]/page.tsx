@@ -54,27 +54,29 @@ interface QueueItem {
   votes: string[]
 }
 
-// ── Pixel art colour tokens ──────────────────────────────────────────────────
+// Shared cinema palette for the room and its dialogs.
 const C = {
-  dark:      '#1a1a2e',
-  gold:      '#FFC940',
-  goldDark:  '#E5A800',
-  teal:      '#26C6DA',
-  tealDark:  '#00ACC1',
-  white:     '#ffffff',
-  offWhite:  '#f8f8f8',
-  lightGray: '#f0f0f0',
-  text:      '#1a1a2e',
-  textFaded:'rgba(26,26,46,0.55)',
-  textFaint: 'rgba(26,26,46,0.30)',
-  textSubtle:'rgba(26,26,46,0.20)',
-  border:    '#1a1a2e',
-  red:       '#FF5F57',
-  green:     '#28C840',
-  bgPanel:   'rgba(255,255,255,0.92)',
-  bgGlass:   'rgba(255,255,255,0.78)',
-  shadow:    '3px 3px 0px #1a1a2e',
-  shadowSm:  '2px 2px 0px #1a1a2e',
+  dark:      '#f6f3ed',
+  ink:       '#16120e',
+  gold:      '#e9b77d',
+  goldDark:  '#c89056',
+  teal:      '#8acbd1',
+  tealDark:  '#5b9ea7',
+  white:     '#f6f3ed',
+  panel:     '#151b24',
+  offWhite:  '#1c2430',
+  lightGray: '#252e3a',
+  text:      '#f6f3ed',
+  textFaded:'rgba(230,234,238,0.68)',
+  textFaint: 'rgba(230,234,238,0.46)',
+  textSubtle:'rgba(230,234,238,0.22)',
+  border:    'rgba(255,255,255,0.13)',
+  red:       '#e98080',
+  green:     '#75d5a5',
+  bgPanel:   'rgba(20,26,35,0.98)',
+  bgGlass:   'rgba(18,23,31,0.94)',
+  shadow:    '0 16px 42px rgba(0,0,0,0.28)',
+  shadowSm:  '0 7px 18px rgba(0,0,0,0.18)',
 }
 
 // ── YouTube Search Modal ──────────────────────────────────────────────────────
@@ -175,13 +177,13 @@ function YouTubeModal({
             youtube.exe
           </span>
           {!isHost && (
-            <span className="text-xs px-2 py-0.5 ml-auto" style={{ background: C.gold, color: C.dark, border: '2px solid ' + C.border, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+            <span className="text-xs px-2 py-0.5 ml-auto" style={{ background: C.gold, color: C.ink, border: '1px solid ' + C.border, borderRadius: 7, fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
               سيُضاف للطابور
             </span>
           )}
           <button onClick={onClose}
             className="w-7 h-7 flex items-center justify-center ml-2 transition-all duration-100"
-            style={{ background: '#fff', color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm }}>
+            style={{ background: C.offWhite, color: C.dark, border: '1px solid ' + C.border, borderRadius: 8 }}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
@@ -192,7 +194,7 @@ function YouTubeModal({
             <button key={t} onClick={() => setTab(t)}
               className="px-4 py-1.5 text-sm font-semibold transition-all duration-100"
               style={tab === t
-                ? { background: C.gold, color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)' }
+                ? { background: C.gold, color: C.ink, border: '1px solid ' + C.border, borderRadius: 9, fontFamily: 'var(--font-mono)' }
                 : { background: C.offWhite, color: C.textFaded, border: '2px solid transparent', fontFamily: 'var(--font-mono)' }}>
               {t === 'search' ? '🔍 بحث' : '🔗 رابط مباشر'}
             </button>
@@ -231,7 +233,7 @@ function YouTubeModal({
                         <img src={v.thumbnail} alt={v.title} className="w-full h-full object-cover" />
                         {v.duration && (
                           <span className="absolute bottom-1 right-1 px-1 text-[10px] font-bold text-white"
-                            style={{ background: C.dark, border: '1px solid ' + C.dark }}>{v.duration}</span>
+                            style={{ background: C.ink, border: '1px solid ' + C.border, borderRadius: 5 }}>{v.duration}</span>
                         )}
                       </div>
                       <div className="p-2.5">
@@ -241,13 +243,13 @@ function YouTubeModal({
                           {isHost && (
                             <button onClick={() => onPlay(v.id, v.title, v.thumbnail)}
                               className="flex-1 py-1.5 text-xs font-bold transition-all duration-100"
-                              style={{ background: C.gold, color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+                              style={{ background: C.gold, color: C.ink, border: '1px solid ' + C.border, borderRadius: 8, fontFamily: 'var(--font-mono)' }}>
                               ▶ تشغيل
                             </button>
                           )}
                           <button onClick={() => onQueue(v.id, v.title, v.thumbnail)}
                             className="flex-1 py-1.5 text-xs font-bold transition-all duration-100"
-                            style={{ background: C.teal, color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+                            style={{ background: C.teal, color: C.ink, border: '1px solid ' + C.border, borderRadius: 8, fontFamily: 'var(--font-mono)' }}>
                             + طابور
                           </button>
                         </div>
@@ -310,7 +312,7 @@ function QueuePanel({
       {isHost && (
         <button onClick={onSkip}
           className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold tracking-wide transition-all duration-100"
-          style={{ background: C.gold, border: '2px solid ' + C.border, color: C.dark, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+          style={{ background: C.gold, border: '1px solid ' + C.border, borderRadius: 9, color: C.ink, fontFamily: 'var(--font-mono)' }}>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
           </svg>
@@ -356,7 +358,7 @@ function QueuePanel({
               <button onClick={() => onVote(item.id)}
                 className="flex flex-col items-center gap-0.5 px-1.5 py-1 transition-all duration-100"
                 style={hasVoted
-                  ? { background: C.gold, border: '2px solid ' + C.border, color: C.dark, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)' }
+                  ? { background: C.gold, border: '1px solid ' + C.border, borderRadius: 8, color: C.ink, fontFamily: 'var(--font-mono)' }
                   : { background: C.lightGray, border: '2px solid ' + C.border, color: C.textFaded, fontFamily: 'var(--font-mono)' }
                 }>
                 <svg width="9" height="9" viewBox="0 0 24 24" fill={hasVoted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5">
@@ -368,7 +370,7 @@ function QueuePanel({
               {(isOwner || isHost) && (
                 <button onClick={() => onRemove(item.id)}
                   className="p-1 opacity-0 group-hover:opacity-100 transition-all duration-100"
-                  style={{ background: '#fff', color: C.red, border: '1.5px solid ' + C.red }}
+                  style={{ background: C.offWhite, color: C.red, border: '1px solid ' + C.red, borderRadius: 7 }}
                   title="إزالة">
                   <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -430,14 +432,20 @@ export default function RoomPage() {
     if (session?.user.serverToken && !connected) connect(session.user.serverToken)
   }, [session, connected, connect])
 
-  // Calculate video height once on mount (pixel value, doesn't change with keyboard)
+  // Keep the mobile video height stable when the keyboard opens, but reset it
+  // when the viewport crosses the desktop breakpoint.
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const isMobile = window.innerWidth < 768
-    if (isMobile) {
-      const initialHeight = window.innerHeight
-      setVideoHeightPx(Math.round(initialHeight * 0.42))
+    let lastIsMobile: boolean | null = null
+    const syncVideoHeight = () => {
+      const isMobile = window.innerWidth < 768
+      if (isMobile === lastIsMobile) return
+      lastIsMobile = isMobile
+      setVideoHeightPx(isMobile ? Math.round(window.innerHeight * 0.42) : null)
     }
+    syncVideoHeight()
+    window.addEventListener('resize', syncVideoHeight)
+    return () => window.removeEventListener('resize', syncVideoHeight)
   }, [])
 
   useEffect(() => {
@@ -782,7 +790,7 @@ export default function RoomPage() {
 
   function copyInvite() {
     navigator.clipboard.writeText(window.location.href)
-    setCopyMsg('Copied!')
+    setCopyMsg('تم النسخ')
     setTimeout(() => setCopyMsg(''), 2000)
   }
 
@@ -870,7 +878,7 @@ export default function RoomPage() {
         <header className="flex items-center justify-between px-4 py-3 flex-shrink-0"
           style={{
             background: C.bgGlass,
-            borderBottom: '3px solid ' + C.border,
+            borderBottom: '1px solid ' + C.border,
             backdropFilter: 'blur(12px)',
           }}>
           <div className="flex items-center gap-2.5">
@@ -879,18 +887,18 @@ export default function RoomPage() {
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
             </button>
-            <div className="w-7 h-7 flex items-center justify-center flex-shrink-0"
+            <div className="w-7 h-7 flex items-center justify-center flex-shrink-0 rounded-lg"
               style={{
                 background: C.gold,
-                border: '2px solid ' + C.border,
+                border: '1px solid ' + C.border,
               }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill={C.dark}><path d="M8 5v14l11-7z"/></svg>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill={C.ink}><path d="M8 5v14l11-7z"/></svg>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="font-bold text-sm hidden sm:inline text-pixel" style={{ color: C.dark, fontFamily: 'var(--font-pixel)' }}>Watch Party</span>
+              <span className="font-bold text-sm hidden sm:inline text-pixel" style={{ color: C.dark, fontFamily: 'var(--font-pixel)' }}>WTO3</span>
               <span className="text-sm hidden sm:inline" style={{ color: C.textFaint }}>/</span>
               <span className="text-sm font-mono" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)' }}>{slug}</span>
-              {room?.isHost && <span className="badge-host text-[10px] sm:text-xs">★ Host</span>}
+              {room?.isHost && <span className="badge-host text-[10px] sm:text-xs">★ المضيف</span>}
             </div>
           </div>
 
@@ -904,12 +912,12 @@ export default function RoomPage() {
                 border: '1.5px solid ' + C.border,
                 animation: connected ? 'pulseGlow 2.2s ease-in-out infinite' : 'none',
               }} />
-              <span className="text-xs hidden sm:inline" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)' }}>{connected ? 'Live' : 'Offline'}</span>
+              <span className="text-xs hidden sm:inline" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)' }}>{connected ? 'متصل' : 'غير متصل'}</span>
             </div>
             <button id="invite-btn" onClick={copyInvite} className="btn-ghost flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5">
               {copyMsg
                 ? <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg><span className="hidden sm:inline">{copyMsg}</span></>
-                : <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span className="hidden sm:inline">Invite</span></>
+                : <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0-7.07 7.07l1.71-1.71"/></svg><span className="hidden sm:inline">دعوة</span></>
               }
             </button>
 
@@ -917,7 +925,7 @@ export default function RoomPage() {
             {session && (
               <button id="logout-room-btn" onClick={() => signOut({ callbackUrl: '/login' })} title="Sign Out"
                 className="w-8 h-8 flex items-center justify-center transition-all duration-100"
-                style={{ background: '#fff', border: '2px solid ' + C.red, color: C.red, boxShadow: C.shadowSm }}>
+                style={{ background: C.offWhite, border: '1px solid ' + C.red, color: C.red }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                   <polyline points="16 17 21 12 16 7"/>
@@ -938,15 +946,15 @@ export default function RoomPage() {
           style={videoHeightPx ? { height: isVideoExpanded ? `${Math.round(videoHeightPx * 1.5)}px` : `${videoHeightPx}px`, flexShrink: 0, flexGrow: 0 } : undefined}
         >
           {!room?.currentVideo && (
-            <div className="text-center space-y-4 px-6">
+            <div className="empty-player-state text-center space-y-4 px-6">
               <div className="w-20 h-20 flex items-center justify-center mx-auto"
-                style={{ background: C.offWhite, border: '2px solid ' + C.border, boxShadow: C.shadow }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,46,0.18)" strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                style={{ background: C.offWhite, border: '1px solid ' + C.border, borderRadius: 22, boxShadow: C.shadow }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
               </div>
               <div>
-                <p className="text-base font-bold" style={{ color: C.textFaded, fontFamily: 'var(--font-pixel)', fontSize: '0.7rem' }}>No video selected</p>
+                <p className="text-base font-bold" style={{ color: C.dark, fontFamily: 'var(--font-pixel)' }}>الفيلم ينتظركم</p>
                 <p className="text-sm mt-1" style={{ color: C.textFaint }}>
-                  {room?.isHost ? 'اختر فيلماً أو مسلسلاً أو فيديو' : 'أضف مقطع للطابور أو انتظر الهوست'}
+                  {room?.isHost ? 'اختر فيلماً أو مسلسلاً وابدأ السهرة' : 'أضف مقطعًا للطابور أو انتظر المضيف'}
                 </p>
               </div>
             </div>
@@ -990,14 +998,14 @@ export default function RoomPage() {
           )}
           {playerError && room?.currentSource === 'movie' && (
             <div role="alert" className="absolute top-3 left-3 right-3 z-20 p-2 text-sm text-center"
-              style={{ background: C.dark, color: C.white, border: '2px solid ' + C.red }}>
+            style={{ background: C.ink, color: C.white, border: '1px solid ' + C.red, borderRadius: 9 }}>
               {playerError}
             </div>
           )}
            {/* Expand/collapse button */}
            <button onClick={() => setIsVideoExpanded(!isVideoExpanded)} title={isVideoExpanded ? 'تصغير الفيديو' : 'تكبير الفيديو'}
             className="absolute bottom-3 right-14 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-100 z-20"
-            style={{ background: C.dark, border: '2px solid ' + C.border, color: C.gold, pointerEvents: 'auto' }}>
+            style={{ background: C.ink, border: '1px solid ' + C.border, color: C.gold, pointerEvents: 'auto' }}>
             {isVideoExpanded
               ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
               : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
@@ -1007,7 +1015,7 @@ export default function RoomPage() {
            {/* Fullscreen button */}
            <button onClick={toggleFullscreen} title={isFullscreen ? 'تصغير' : 'تكبير'}
             className="absolute bottom-3 right-3 w-9 h-9 flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 opacity-80 hover:opacity-100 transition-all duration-100 z-20"
-            style={{ background: C.dark, border: '2px solid ' + C.border, color: C.gold, pointerEvents: 'auto' }}>
+            style={{ background: C.ink, border: '1px solid ' + C.border, color: C.gold, pointerEvents: 'auto' }}>
             {isFullscreen
               ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
               : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
@@ -1018,11 +1026,11 @@ export default function RoomPage() {
         {/* Host Controls */}
         {room?.isHost && (
           <div className="host-controls flex-shrink-0 p-3 md:p-4"
-            style={{ background: C.bgGlass, borderTop: '3px solid ' + C.border, backdropFilter: 'blur(12px)' }}>
+            style={{ background: C.bgGlass, borderTop: '1px solid ' + C.border, backdropFilter: 'blur(12px)' }}>
             <div className="flex gap-2">
               <button id="youtube-picker-btn" onClick={() => setShowYouTubeModal(true)}
                 className="flex items-center gap-2 px-3 md:px-4 py-2.5 font-bold text-sm flex-1 transition-all duration-100"
-                style={{ background: '#fff', border: '2px solid ' + C.border, color: C.dark, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+                style={{ background: C.offWhite, border: '1px solid ' + C.border, color: C.dark, fontFamily: 'var(--font-mono)' }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                   <path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z" fill="#FF5252"/>
                   <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="white"/>
@@ -1031,7 +1039,7 @@ export default function RoomPage() {
               </button>
               <button onClick={() => setShowDriveBrowser(true)}
                 className="flex items-center gap-2 px-3 md:px-5 flex-shrink-0 font-bold text-sm transition-all duration-100"
-                style={{ background: C.teal, border: '2px solid ' + C.border, color: C.dark, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+                style={{ background: C.teal, border: '1px solid ' + C.border, color: C.ink, fontFamily: 'var(--font-mono)' }}>
                 <svg width="15" height="15" viewBox="0 0 87.3 78" fill="none">
                   <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0a15.4 15.4 0 0 0 2.1 7.85l4.5-6z" fill="#0066da" transform="scale(0.8)"/>
                   <path d="M43.65 25L29.9 1.2a15.4 15.4 0 0 0-3.3 3.3L2.1 45.5A15.35 15.35 0 0 0 0 53.0h27.5L43.65 25z" fill="#00ac47" transform="scale(0.8)"/>
@@ -1044,7 +1052,7 @@ export default function RoomPage() {
               </button>
               <button onClick={() => setShowMovieLibrary(true)}
                 className="px-3 md:px-5 flex-shrink-0 font-bold text-xs sm:text-sm transition-all duration-100"
-                style={{ background: C.gold, border: '2px solid ' + C.border, color: C.dark, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)' }}>
+                style={{ background: C.gold, border: '1px solid ' + C.border, color: C.ink, fontFamily: 'var(--font-mono)' }}>
                 أفلام ومسلسلات
               </button>
             </div>
@@ -1057,7 +1065,7 @@ export default function RoomPage() {
              style={{ background: C.bgGlass, borderTop: '2px solid ' + C.border, backdropFilter: 'blur(12px)' }}>
              <button onClick={() => setShowYouTubeModal(true)}
                className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold tracking-wide transition-all duration-100"
-               style={{ background: C.gold, border: '2px solid ' + C.border, color: C.dark, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+               style={{ background: C.gold, border: '1px solid ' + C.border, color: C.ink, fontFamily: 'var(--font-mono)' }}>
                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                أضف مقطع للطابور
              </button>
@@ -1066,16 +1074,16 @@ export default function RoomPage() {
 
          {/* ── Mobile chat area ── */}
          <div className="md:hidden flex flex-col flex-1 overflow-hidden min-h-0"
-           style={{ background: C.white }}>
+           style={{ background: C.panel }}>
            <div className="flex flex-shrink-0" style={{ borderBottom: '2px solid ' + C.border }}>
              {(['chat', 'queue'] as const).map((t) => (
                <button key={t} onClick={() => setSidebarTab(t)}
                  className="flex-1 py-2.5 text-xs font-bold uppercase tracking-widest transition-all relative"
                  style={sidebarTab === t
-                   ? { color: C.dark, background: C.gold, fontFamily: 'var(--font-mono)' }
+                   ? { color: C.ink, background: C.gold, fontFamily: 'var(--font-mono)' }
                    : { color: C.textFaded, background: C.offWhite, fontFamily: 'var(--font-mono)' }
                  }>
-                 {t === 'chat' ? 'Chat' : `Queue${queue.length > 0 ? ` (${queue.length})` : ''}`}
+                 {t === 'chat' ? 'المحادثة' : `الطابور${queue.length > 0 ? ` (${queue.length})` : ''}`}
                  {sidebarTab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: C.border }} />}
                </button>
              ))}
@@ -1086,10 +1094,10 @@ export default function RoomPage() {
               <div ref={mobileChatScrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-thin" style={{ minHeight: 0, overscrollBehavior: 'contain' }}>
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center space-y-2 py-6">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,46,0.10)" strokeWidth="1.5">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.textFaint} strokeWidth="1.5">
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                     </svg>
-                    <p className="text-xs" style={{ color: C.textFaint, fontFamily: 'var(--font-mono)' }}>No messages yet. Say hi!</p>
+                    <p className="text-xs" style={{ color: C.textFaint, fontFamily: 'var(--font-mono)' }}>ابدأوا المحادثة برسالة 👋</p>
                   </div>
                 )}
                 {messages.map((msg) => {
@@ -1110,12 +1118,12 @@ export default function RoomPage() {
                       <div className="w-6 h-6 avatar text-[10px] self-end flex-shrink-0">{msg.userName?.[0]?.toUpperCase()}</div>
                       <div className={`max-w-[80%] space-y-0.5 flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
                         <span className="text-xs px-1" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)', textAlign: isOwn ? 'right' : 'left' }}>
-                          {isOwn ? 'You' : msg.userName}
+                          {isOwn ? 'أنت' : msg.userName}
                         </span>
                         <div className="px-3 py-2 text-sm leading-relaxed"
                           style={isOwn
-                            ? { background: C.gold, color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)' }
-                            : { background: C.offWhite, color: C.dark, border: '2px solid ' + C.border, fontFamily: 'var(--font-mono)' }
+                            ? { background: C.gold, color: C.ink, border: '1px solid ' + C.border, borderRadius: 10, fontFamily: 'var(--font-mono)' }
+                            : { background: C.offWhite, color: C.dark, border: '1px solid ' + C.border, borderRadius: 10, fontFamily: 'var(--font-mono)' }
                           }>
                           {msg.message}
                         </div>
@@ -1146,15 +1154,15 @@ export default function RoomPage() {
                     onChange={(e) => onTyping(e.target.value)}
                     onFocus={handleMobileChatFocus}
                     onBlur={handleMobileChatBlur}
-                    placeholder="Send a message..." 
+                    placeholder="اكتب رسالة..."
                     enterKeyHint="send"
                     className="input-field flex-1 min-w-0 py-2"
                   />
                   <button id="send-message-btn-mobile" type="submit" disabled={!chatInput.trim()}
                     aria-label="Send message"
                     className="w-11 h-11 flex items-center justify-center transition-all duration-100 flex-shrink-0 disabled:opacity-35"
-                    style={{ background: C.gold, border: '2px solid ' + C.border }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.dark} strokeWidth="2.5">
+                    style={{ background: C.gold, border: '1px solid ' + C.border }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth="2.5">
                       <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                     </svg>
                   </button>
@@ -1182,8 +1190,8 @@ export default function RoomPage() {
       <aside
         className="hidden md:flex md:w-80 md:flex-col"
         style={{
-          borderLeft: '3px solid ' + C.border,
-          background: C.white,
+          borderLeft: '1px solid ' + C.border,
+          background: C.panel,
         }}>
 
          <div className="flex items-center justify-between px-4 py-3 md:hidden flex-shrink-0"
@@ -1194,7 +1202,7 @@ export default function RoomPage() {
         {/* Participants */}
         <div className="p-4 flex-shrink-0" style={{ borderBottom: '2px solid ' + C.border }}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)' }}>Participants</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)' }}>المشاركون</h3>
             <span className="text-xs px-2 py-0.5 font-bold"
               style={{ background: C.lightGray, color: C.textFaded, border: '2px solid ' + C.border, fontFamily: 'var(--font-mono)' }}>
               {participants.length}
@@ -1212,7 +1220,7 @@ export default function RoomPage() {
                 )}
               </div>
             ))}
-            {participants.length === 0 && <p className="text-xs" style={{ color: C.textFaint, fontFamily: 'var(--font-mono)' }}>No participants yet...</p>}
+            {participants.length === 0 && <p className="text-xs" style={{ color: C.textFaint, fontFamily: 'var(--font-mono)' }}>بانتظار المشاركين...</p>}
           </div>
         </div>
 
@@ -1222,10 +1230,10 @@ export default function RoomPage() {
             <button key={t} onClick={() => setSidebarTab(t)}
               className="flex-1 py-2.5 text-xs font-bold uppercase tracking-widest transition-all relative"
               style={sidebarTab === t
-                ? { color: C.dark, background: C.gold, fontFamily: 'var(--font-mono)' }
+                ? { color: C.ink, background: C.gold, fontFamily: 'var(--font-mono)' }
                 : { color: C.textFaded, background: C.offWhite, fontFamily: 'var(--font-mono)' }
               }>
-              {t === 'chat' ? 'Chat' : `Queue${queue.length > 0 ? ` (${queue.length})` : ''}`}
+                {t === 'chat' ? 'المحادثة' : `الطابور${queue.length > 0 ? ` (${queue.length})` : ''}`}
               {sidebarTab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: C.border }} />}
             </button>
           ))}
@@ -1237,10 +1245,10 @@ export default function RoomPage() {
             <div ref={desktopChatScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin" style={{ minHeight: 0 }}>
               {messages.length === 0 && (
                 <div className="flex flex-col items-center justify-center h-full text-center space-y-2 py-8">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(26,26,46,0.10)" strokeWidth="1.5">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={C.textFaint} strokeWidth="1.5">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                   </svg>
-                  <p className="text-xs" style={{ color: C.textFaint, fontFamily: 'var(--font-mono)' }}>No messages yet. Say hi!</p>
+                  <p className="text-xs" style={{ color: C.textFaint, fontFamily: 'var(--font-mono)' }}>ابدأوا المحادثة برسالة 👋</p>
                 </div>
               )}
               {messages.map((msg) => {
@@ -1261,12 +1269,12 @@ export default function RoomPage() {
                     <div className="w-6 h-6 avatar text-[10px] self-end flex-shrink-0">{msg.userName?.[0]?.toUpperCase()}</div>
                     <div className={`max-w-[80%] space-y-0.5 flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
                       <span className="text-xs px-1" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)', textAlign: isOwn ? 'right' : 'left' }}>
-                        {isOwn ? 'You' : msg.userName}
+                        {isOwn ? 'أنت' : msg.userName}
                       </span>
                       <div className="px-3 py-2 text-sm leading-relaxed"
                         style={isOwn
-                          ? { background: C.gold, color: C.dark, border: '2px solid ' + C.border, boxShadow: C.shadowSm, fontFamily: 'var(--font-mono)' }
-                          : { background: C.offWhite, color: C.dark, border: '2px solid ' + C.border, fontFamily: 'var(--font-mono)' }
+                          ? { background: C.gold, color: C.ink, border: '1px solid ' + C.border, borderRadius: 10, fontFamily: 'var(--font-mono)' }
+                          : { background: C.offWhite, color: C.dark, border: '1px solid ' + C.border, borderRadius: 10, fontFamily: 'var(--font-mono)' }
                         }>
                         {msg.message}
                       </div>
@@ -1296,13 +1304,13 @@ export default function RoomPage() {
                   onChange={(e) => onTyping(e.target.value)}
                   onFocus={() => setIsChatFocused(true)}
                   onBlur={() => setIsChatFocused(false)}
-                  placeholder="Send a message..." 
+                  placeholder="اكتب رسالة..."
                   className="input-field flex-1 py-2" 
                 />
                 <button id="send-message-btn" type="submit" disabled={!chatInput.trim()}
                   className="w-9 h-9 flex items-center justify-center transition-all duration-100 flex-shrink-0 disabled:opacity-35"
-                  style={{ background: C.gold, border: '2px solid ' + C.border }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.dark} strokeWidth="2.5">
+                  style={{ background: C.gold, border: '1px solid ' + C.border }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth="2.5">
                     <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                   </svg>
                 </button>
