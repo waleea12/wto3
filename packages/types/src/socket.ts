@@ -1,5 +1,5 @@
 import type { VideoSource } from './room'
-import type { ChatMessage, SendMessagePayload } from './chat'
+import type { ChatMessage, SendMessagePayload, MessageReactionPayload, MessageReactionsUpdate } from './chat'
 
 // ── Queue Item ───────────────────────────────────────────────────────────────
 export interface QueueItem {
@@ -21,9 +21,11 @@ export interface ServerToClientEvents {
   seek: (payload: SeekPayload) => void
   change_video: (payload: ChangeVideoPayload) => void
   chat_message: (message: ChatMessage) => void
+  message_reactions: (update: MessageReactionsUpdate) => void
   typing: (payload: TypingPayload) => void
   user_joined: (payload: UserPresencePayload) => void
   user_left: (payload: UserPresencePayload) => void
+  presence_updated: (participants: UserPresencePayload[]) => void
   host_changed: (payload: HostChangedPayload) => void
   error: (payload: SocketError) => void
   // Queue events
@@ -32,13 +34,14 @@ export interface ServerToClientEvents {
 
 // ── Client → Server ──────────────────────────────────────────────────────────
 export interface ClientToServerEvents {
-  join_room: (payload: JoinRoomPayload, cb: (state: SyncState & { queue: QueueItem[] }) => void) => void
+  join_room: (payload: JoinRoomPayload, cb: (state: SyncState & { queue: QueueItem[]; participants: UserPresencePayload[]; isHost: boolean; hostId: string }) => void) => void
   leave_room: () => void
   play: (payload: PlayPayload) => void
   pause: (payload: PausePayload) => void
   seek: (payload: SeekPayload) => void
   change_video: (payload: ChangeVideoPayload) => void
   chat_message: (payload: SendMessagePayload) => void
+  message_reaction: (payload: MessageReactionPayload) => void
   typing: (payload: TypingPayload) => void
   heartbeat: (payload: HeartbeatPayload) => void
   transfer_host: (payload: TransferHostPayload) => void

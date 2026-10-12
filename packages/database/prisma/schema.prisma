@@ -20,6 +20,7 @@ model User {
   hostedRooms  Room[]        @relation("HostedRooms")
   participants Participant[]
   messages     Message[]
+  reactions    MessageReaction[]
 
   @@map("users")
 }
@@ -59,12 +60,33 @@ model Message {
   roomId    String
   userId    String
   message   String
+  replyToId String?
   createdAt DateTime @default(now())
 
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replyTo Message? @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies Message[] @relation("MessageReplies")
+  reactions MessageReaction[]
+
+  @@index([roomId, createdAt])
 
   @@map("messages")
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("message_reactions")
 }
 
 enum VideoSource {

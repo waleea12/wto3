@@ -18,8 +18,11 @@ import type {
   QueueAddPayload,
   QueueRemovePayload,
   QueueVotePayload,
+  MessageReactionPayload,
+  UserPresencePayload,
 } from '@watch-party/types'
 import { prisma } from '@watch-party/database'
+import { groupReactions, messageInclude, toChatMessage } from '../lib/chat'
 
 type IoServer = Server<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
 type IoSocket = Socket<ClientToServerEvents, ServerToClientEvents, InterServerEvents, SocketData>
@@ -48,7 +51,27 @@ function systemMsg(msg: string) {
     userAvatar: null,
     message: msg,
     createdAt: new Date(),
+    roomId: '',
+    replyTo: null,
+    reactions: [],
   }
+}
+
+async function onlineUsers(io: IoServer, roomSlug: string): Promise<UserPresencePayload[]> {
+  const sockets = await io.in(roomSlug).fetchSockets()
+  const users = new Map<string, UserPresencePayload>()
+  for (const current of sockets) {
+    users.set(current.data.userId, {
+      userId: current.data.userId,
+      userName: current.data.userName,
+      userAvatar: current.data.userAvatar,
+    })
+  }
+  return [...users.values()]
+}
+
+async function publishPresence(io: IoServer, roomSlug: string) {
+  io.to(roomSlug).emit('presence_updated', await onlineUsers(io, roomSlug))
 }
 
 export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
@@ -66,6 +89,13 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
       if (!room) {
         socket.emit('error', { code: 'ROOM_NOT_FOUND', message: 'Room not found' })
         return
+      }
+
+      const wasOnline = (await onlineUsers(io, roomSlug)).some((user) => user.userId === userId)
+      const previousRoom = socket.data.roomSlug
+      if (previousRoom && previousRoom !== roomSlug) {
+        socket.leave(previousRoom)
+        await publishPresence(io, previousRoom)
       }
 
       // Upsert participant
@@ -102,14 +132,15 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
       const queue = sortedQueue(getQueue(roomSlug))
 
       // Notify other users in the room
-      socket.to(roomSlug).emit('user_joined', {
-        userId,
-        userName: socket.data.userName,
-        userAvatar: socket.data.userAvatar,
-      })
-
-      // Broadcast join system message to all (including joiner)
-      io.to(roomSlug).emit('chat_message', systemMsg(`${socket.data.userName} joined the room 👋`) as any)
+      if (!wasOnline) {
+        socket.to(roomSlug).emit('user_joined', {
+          userId,
+          userName: socket.data.userName,
+          userAvatar: socket.data.userAvatar,
+        })
+        io.to(roomSlug).emit('chat_message', systemMsg(`${socket.data.userName} joined the room 👋`))
+      }
+      await publishPresence(io, roomSlug)
 
       // Return current state + queue to joining client
       callback({
@@ -121,6 +152,7 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
         isHost: state.hostId === userId,
         hostId: state.hostId,
         queue,
+        participants: await onlineUsers(io, roomSlug),
       } as any)
     } catch (err) {
       console.error('join_room error:', err)
@@ -135,13 +167,29 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
 
     socket.leave(roomSlug)
     socket.data.roomSlug = ''
-    socket.to(roomSlug).emit('user_left', {
-      userId: socket.data.userId,
-      userName: socket.data.userName,
-      userAvatar: socket.data.userAvatar,
-    })
-    // Broadcast leave system message
-    io.to(roomSlug).emit('chat_message', systemMsg(`${socket.data.userName} left the room 👋`) as any)
+    const stillOnline = (await onlineUsers(io, roomSlug)).some((user) => user.userId === socket.data.userId)
+    if (!stillOnline) {
+      socket.to(roomSlug).emit('user_left', {
+        userId: socket.data.userId,
+        userName: socket.data.userName,
+        userAvatar: socket.data.userAvatar,
+      })
+      io.to(roomSlug).emit('chat_message', systemMsg(`${socket.data.userName} left the room 👋`))
+      const state = roomStates.get(roomSlug)
+      if (state?.hostId === socket.data.userId && state.isPlaying) {
+        state.currentTime = computeCurrentTime(state)
+        state.isPlaying = false
+        state.serverTimestamp = Date.now()
+        await prisma.room.update({
+          where: { slug: roomSlug },
+          data: { currentTime: state.currentTime, isPlaying: false },
+        })
+        io.to(roomSlug).emit('pause', {
+          currentTime: state.currentTime, serverTimestamp: state.serverTimestamp,
+        })
+      }
+    }
+    await publishPresence(io, roomSlug)
   })
 
   // PLAY
@@ -316,36 +364,69 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
   socket.on('chat_message', async (payload: SendMessagePayload) => {
     const roomSlug = socket.data.roomSlug
     if (!roomSlug) return
-
-    const room = await prisma.room.findUnique({ where: { slug: roomSlug } })
-    if (!room) return
-
-    const message = await prisma.message.create({
-      data: {
-        roomId: room.id,
-        userId: socket.data.userId,
-        message: payload.message,
-      },
-    })
-
-    const chatMessage = {
-      id: message.id,
-      roomId: room.id,
-      userId: socket.data.userId,
-      userName: socket.data.userName,
-      userAvatar: socket.data.userAvatar,
-      message: payload.message,
-      createdAt: message.createdAt,
+    const text = typeof payload?.message === 'string' ? payload.message.trim() : ''
+    if (!text || text.length > 2000) return
+    try {
+      const room = await prisma.room.findUnique({ where: { slug: roomSlug }, select: { id: true } })
+      if (!room) return
+      let replyToId: string | undefined
+      if (typeof payload.replyToId === 'string') {
+        const reply = await prisma.message.findFirst({
+          where: { id: payload.replyToId, roomId: room.id },
+          select: { id: true },
+        })
+        if (!reply) return
+        replyToId = reply.id
+      }
+      const message = await prisma.message.create({
+        data: { roomId: room.id, userId: socket.data.userId, message: text, replyToId },
+        include: messageInclude,
+      })
+      io.to(roomSlug).emit('chat_message', toChatMessage(message))
+    } catch (error) {
+      console.error('chat_message error:', error)
     }
+  })
 
-    io.to(roomSlug).emit('chat_message', chatMessage)
+  socket.on('message_reaction', async (payload: MessageReactionPayload) => {
+    const roomSlug = socket.data.roomSlug
+    if (!roomSlug || !payload || typeof payload.messageId !== 'string') return
+    const allowed = ['❤️', '😂', '🔥', '👏', '😮', '😢']
+    if (!allowed.includes(payload.emoji)) return
+    try {
+      const message = await prisma.message.findFirst({
+        where: { id: payload.messageId, room: { slug: roomSlug } },
+        select: { id: true },
+      })
+      if (!message) return
+      const key = { messageId_userId_emoji: {
+        messageId: message.id, userId: socket.data.userId, emoji: payload.emoji,
+      } }
+      const existing = await prisma.messageReaction.findUnique({ where: key, select: { id: true } })
+      if (existing) await prisma.messageReaction.delete({ where: key })
+      else await prisma.messageReaction.create({ data: {
+        messageId: message.id, userId: socket.data.userId, emoji: payload.emoji,
+      } })
+      const reactions = await prisma.messageReaction.findMany({
+        where: { messageId: message.id }, select: { emoji: true, userId: true },
+      })
+      io.to(roomSlug).emit('message_reactions', {
+        messageId: message.id, reactions: groupReactions(reactions),
+      })
+    } catch (error) {
+      console.error('message_reaction error:', error)
+    }
   })
 
   // TYPING INDICATOR
   socket.on('typing', (payload: TypingPayload) => {
     const roomSlug = socket.data.roomSlug
     if (!roomSlug) return
-    socket.to(roomSlug).emit('typing', payload)
+    socket.to(roomSlug).emit('typing', {
+      userId: socket.data.userId,
+      userName: socket.data.userName,
+      isTyping: Boolean(payload?.isTyping),
+    })
   })
 
   // HEARTBEAT - latency compensation
@@ -404,32 +485,54 @@ export function registerRoomHandlers(io: IoServer, socket: IoSocket) {
   socket.on('disconnect', async () => {
     const roomSlug = socket.data.roomSlug
     if (!roomSlug) return
-
-    socket.to(roomSlug).emit('user_left', {
-      userId: socket.data.userId,
-      userName: socket.data.userName,
-      userAvatar: socket.data.userAvatar,
-    })
-
-    // Broadcast leave system message
-    io.to(roomSlug).emit('chat_message', systemMsg(`${socket.data.userName} left the room 👋`) as any)
+    setTimeout(async () => {
+      try {
+        const users = await onlineUsers(io, roomSlug)
+        if (!users.some((user) => user.userId === socket.data.userId)) {
+          io.to(roomSlug).emit('user_left', {
+            userId: socket.data.userId,
+            userName: socket.data.userName,
+            userAvatar: socket.data.userAvatar,
+          })
+          io.to(roomSlug).emit('chat_message', systemMsg(`${socket.data.userName} left the room 👋`))
+          const state = roomStates.get(roomSlug)
+          if (state?.hostId === socket.data.userId && state.isPlaying) {
+            state.currentTime = computeCurrentTime(state)
+            state.isPlaying = false
+            state.serverTimestamp = Date.now()
+            await prisma.room.update({
+              where: { slug: roomSlug },
+              data: { currentTime: state.currentTime, isPlaying: false },
+            })
+            io.to(roomSlug).emit('pause', {
+              currentTime: state.currentTime, serverTimestamp: state.serverTimestamp,
+            })
+          }
+        }
+        io.to(roomSlug).emit('presence_updated', users)
+      } catch (error) {
+        console.error('disconnect presence error:', error)
+      }
+    }, 1200)
 
     // Wait 5 seconds before checking if the room is empty to allow for page refreshes
     setTimeout(async () => {
-      const socketsInRoom = await io.in(roomSlug).fetchSockets()
-      if (socketsInRoom.length === 0) {
-        const state = roomStates.get(roomSlug)
-        if (state) {
-          await prisma.room.update({
-            where: { slug: roomSlug },
-            data: {
-              currentTime: computeCurrentTime(state),
-              isPlaying: false,
-            },
-          })
-          // We no longer delete the state and queue immediately so they persist
-          state.isPlaying = false
+      try {
+        const socketsInRoom = await io.in(roomSlug).fetchSockets()
+        if (socketsInRoom.length === 0) {
+          const state = roomStates.get(roomSlug)
+          if (state) {
+            const currentTime = computeCurrentTime(state)
+            await prisma.room.update({
+              where: { slug: roomSlug }, data: { currentTime, isPlaying: false },
+            })
+            state.currentTime = currentTime
+            state.isPlaying = false
+            state.serverTimestamp = Date.now()
+          }
         }
+      } catch (error) {
+        console.error('empty room cleanup error:', error)
       }
     }, 5000)
   })

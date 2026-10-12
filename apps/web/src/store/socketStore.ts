@@ -27,13 +27,17 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   connect: (token: string) => {
     const existing = get().socket
-    if (existing) return
+    if (existing) {
+      existing.auth = { token }
+      if (!existing.connected) existing.connect()
+      return
+    }
 
     const socket: AppSocket = io(SERVER_URL, {
       auth: { token },
       transports: ['websocket'],
       reconnection: true,
-      reconnectionAttempts: 10,
+      reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
     })
 

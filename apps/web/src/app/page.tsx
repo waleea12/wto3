@@ -2,9 +2,9 @@
 
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { ArrowLeft, ArrowUpLeft, Film, Link2, LogOut, MessageCircle, Play, Plus, Radio, Users } from 'lucide-react'
+import { ArrowLeft, ArrowUpLeft, Film, History, Link2, LogOut, MessageCircle, Play, Plus, Radio, Users } from 'lucide-react'
 
 const FEATURES = [
   { icon: Film, title: 'كل ما تحب تتابعه', text: 'أفلام ومسلسلات ومقاطع يوتيوب في مكان واحد.' },
@@ -17,6 +17,11 @@ export default function HomePage() {
   const router = useRouter()
   const [slug, setSlug] = useState('')
   const [loading, setLoading] = useState(false)
+  const [lastRoomSlug, setLastRoomSlug] = useState('')
+
+  useEffect(() => {
+    setLastRoomSlug(session?.user.id ? window.localStorage.getItem(`wto3:lastRoom:${session.user.id}`) ?? '' : '')
+  }, [session?.user.id])
 
   async function createRoom() {
     if (!session) { router.push('/login'); return }
@@ -71,6 +76,7 @@ export default function HomePage() {
                 <div className="join-form-row"><input id="room-code-input" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="اكتب رمز الغرفة" autoComplete="off" dir="ltr" /><button id="join-room-btn" type="submit" disabled={!slug.trim()} aria-label="انضم للغرفة"><ArrowLeft size={20} /></button></div>
               </form>
             </div> : <div className="hero-actions"><button id="login-btn" className="action-primary" onClick={() => router.push('/login')}>ابدأ المشاهدة <ArrowLeft size={19} className="action-arrow" /></button><span className="hero-action-note">جهّز السهرة في أقل من دقيقة</span></div>}
+            {session && lastRoomSlug && <button className="resume-room" onClick={() => router.push(`/room/${encodeURIComponent(lastRoomSlug)}`)}><History size={16} /> العودة إلى غرفتك <span dir="ltr">{lastRoomSlug}</span><ArrowLeft size={15} /></button>}
             <div className="hero-benefits"><span><Radio size={15} /> تشغيل متزامن</span><span><MessageCircle size={15} /> دردشة مباشرة</span><span><Link2 size={15} /> مشاركة سهلة</span></div>
           </div>
 

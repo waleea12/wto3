@@ -7,6 +7,7 @@ import { nanoid } from 'nanoid'
 import axios from 'axios'
 import { roomStates } from '../socket/roomHandlers'
 import { ioServer } from '../socket/index'
+import { messageInclude, toChatMessage } from '../lib/chat'
 
 export const roomRouter = Router()
 
@@ -47,7 +48,12 @@ roomRouter.get('/:slug', requireAuth, async (req: AuthRequest, res: Response, ne
       },
     })
     if (!room) throw new AppError(404, 'Room not found')
-    return res.json(room)
+    const sockets = ioServer ? await ioServer.in(room.slug).fetchSockets() : []
+    const onlineIds = new Set(sockets.map((socket) => socket.data.userId))
+    return res.json({
+      ...room,
+      participants: room.participants.filter((participant) => onlineIds.has(participant.userId)),
+    })
   } catch (err) {
     return next(err)
   }
@@ -74,7 +80,12 @@ roomRouter.post('/:slug/join', requireAuth, async (req: AuthRequest, res: Respon
         },
       },
     })
-    return res.json(updatedRoom)
+    const sockets = ioServer ? await ioServer.in(room.slug).fetchSockets() : []
+    const onlineIds = new Set(sockets.map((socket) => socket.data.userId))
+    return res.json({
+      ...updatedRoom,
+      participants: updatedRoom?.participants.filter((participant) => onlineIds.has(participant.userId)) ?? [],
+    })
   } catch (err) {
     return next(err)
   }
@@ -87,11 +98,11 @@ roomRouter.get('/:slug/messages', requireAuth, async (req: AuthRequest, res: Res
     if (!room) throw new AppError(404, 'Room not found')
     const messages = await prisma.message.findMany({
       where: { roomId: room.id },
-      include: { user: { select: { id: true, name: true, avatar: true } } },
-      orderBy: { createdAt: 'asc' },
+      include: messageInclude,
+      orderBy: { createdAt: 'desc' },
       take: 100,
     })
-    return res.json(messages)
+    return res.json(messages.reverse().map(toChatMessage))
   } catch (err) {
     return next(err)
   }

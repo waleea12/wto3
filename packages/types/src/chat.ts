@@ -5,9 +5,22 @@ export interface ChatMessage {
   userName: string
   userAvatar: string | null
   message: string
-  createdAt: Date
+  createdAt: Date | string
+  replyTo: { id: string; userName: string; message: string } | null
+  reactions: { emoji: string; userIds: string[] }[]
 }
 
 export interface SendMessagePayload {
   message: string
+  replyToId?: string
+}
+
+export interface MessageReactionPayload {
+  messageId: string
+  emoji: string
+}
+
+export interface MessageReactionsUpdate {
+  messageId: string
+  reactions: ChatMessage['reactions']
 }

@@ -6,6 +6,8 @@ import { useSocketStore } from '@/store/socketStore'
 import axios from 'axios'
 import DriveBrowser from '@/components/DriveBrowser'
 import MovieLibrary from '@/components/MovieLibrary'
+import ChatMessageItem from '@/components/ChatMessageItem'
+import type { ChatMessage, UserPresencePayload } from '@watch-party/types'
 
 
 const SERVER = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:4000'
@@ -28,15 +30,6 @@ interface RoomState {
   currentSource: VideoSource
   currentTime: number
   isPlaying: boolean
-}
-
-interface ChatMessage {
-  id: string
-  userId: string
-  userName: string
-  userAvatar: string | null
-  message: string
-  createdAt: Date | string
 }
 
 interface Participant {
@@ -395,12 +388,14 @@ export default function RoomPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [queue, setQueue] = useState<QueueItem[]>([])
   const [chatInput, setChatInput] = useState('')
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null)
   const [copyMsg, setCopyMsg] = useState('')
-  const [typingUsers, setTypingUsers] = useState<string[]>([])
+  const [typingUsers, setTypingUsers] = useState<{ userId: string; userName: string }[]>([])
   const [showDriveBrowser, setShowDriveBrowser] = useState(false)
   const [showYouTubeModal, setShowYouTubeModal] = useState(false)
   const [showMovieLibrary, setShowMovieLibrary] = useState(false)
   const [playerError, setPlayerError] = useState('')
+  const [roomLoadError, setRoomLoadError] = useState('')
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [sidebarTab, setSidebarTab] = useState<'chat' | 'queue'>('chat')
   const [isChatFocused, setIsChatFocused] = useState(false)
@@ -417,8 +412,10 @@ export default function RoomPage() {
   const mobileChatScrollRef = useRef<HTMLDivElement>(null)
   const desktopChatScrollRef = useRef<HTMLDivElement>(null)
   const mobileChatInputRef = useRef<HTMLInputElement>(null)
+  const desktopChatInputRef = useRef<HTMLInputElement>(null)
   const chatBlurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const typingExpiryTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
   const heartbeatInterval = useRef<ReturnType<typeof setInterval> | null>(null)
   const isPlayingRef = useRef<boolean>(false)
   const ytCurrentTimeRef = useRef<number>(0)
@@ -525,6 +522,7 @@ export default function RoomPage() {
       token: session?.user.serverToken ?? '',
       driveToken: (session?.user as any)?.accessToken ?? undefined
     }, (state: any) => {
+      setRoomLoadError('')
       setRoom((prev) => ({
         isHost: state.isHost ?? prev?.isHost ?? false,
         hostId: state.hostId ?? prev?.hostId ?? '',
@@ -534,6 +532,10 @@ export default function RoomPage() {
         isPlaying: state.isPlaying,
       }))
       if (state.queue) setQueue(state.queue)
+      if (session?.user.id) window.localStorage.setItem(`wto3:lastRoom:${session.user.id}`, slug)
+      if (state.participants) setParticipants(state.participants.map((user: UserPresencePayload) => ({
+        user: { id: user.userId, name: user.userName, avatar: user.userAvatar },
+      })))
     })
 
     socket.on('user_joined', (data: any) => {
@@ -542,7 +544,17 @@ export default function RoomPage() {
         { user: { id: data.userId, name: data.userName, avatar: data.userAvatar ?? null } },
       ])
     })
-    socket.on('user_left', (data: any) => setParticipants((prev) => prev.filter((p) => p.user.id !== data.userId)))
+    socket.on('user_left', (data: any) => {
+      setParticipants((prev) => prev.filter((p) => p.user.id !== data.userId))
+      setTypingUsers((prev) => prev.filter((user) => user.userId !== data.userId))
+    })
+    socket.on('presence_updated', (users) => {
+      setParticipants(users.map((user) => ({
+        user: { id: user.userId, name: user.userName, avatar: user.userAvatar },
+      })))
+      const onlineIds = new Set(users.map((user) => user.userId))
+      setTypingUsers((prev) => prev.filter((user) => onlineIds.has(user.userId)))
+    })
     socket.on('play', (p: any) => {
       setRoom((r) => r ? { ...r, isPlaying: true, currentTime: p.currentTime } : r)
       if (cineSrcRef.current) {
@@ -576,10 +588,27 @@ export default function RoomPage() {
       cineSrcTimeRef.current = 0
       setRoom((r) => r ? { ...r, currentVideo: p.videoId, currentSource: p.source as VideoSource, currentTime: 0, isPlaying: p.source !== 'movie' } : r)
     })
-    socket.on('chat_message', (msg: any) => setMessages((prev) => [...prev, msg as ChatMessage]))
+    socket.on('chat_message', (msg) => setMessages((prev) => prev.some((item) => item.id === msg.id) ? prev : [...prev, msg]))
+    socket.on('message_reactions', ({ messageId, reactions }) => setMessages((prev) => prev.map((message) =>
+      message.id === messageId ? { ...message, reactions } : message
+    )))
     socket.on('typing', (p: any) => {
-      if (p.userId === session?.user.id) return
-      setTypingUsers((prev) => p.isTyping ? [...new Set([...prev, p.userName])] : prev.filter((u) => u !== p.userName))
+      if (p.userId === session?.user.id || typeof p.userId !== 'string') return
+      const previousTimer = typingExpiryTimers.current.get(p.userId)
+      if (previousTimer) clearTimeout(previousTimer)
+      typingExpiryTimers.current.delete(p.userId)
+      if (!p.isTyping) {
+        setTypingUsers((prev) => prev.filter((user) => user.userId !== p.userId))
+        return
+      }
+      setTypingUsers((prev) => [
+        ...prev.filter((user) => user.userId !== p.userId),
+        { userId: p.userId, userName: p.userName },
+      ])
+      typingExpiryTimers.current.set(p.userId, setTimeout(() => {
+        setTypingUsers((prev) => prev.filter((user) => user.userId !== p.userId))
+        typingExpiryTimers.current.delete(p.userId)
+      }, 3000))
     })
     socket.on('sync_state', (state: any) => {
       setRoom((r) => r ? { ...r, currentTime: state.currentTime, isPlaying: state.isPlaying } : r)
@@ -597,20 +626,35 @@ export default function RoomPage() {
     socket.on('queue_updated', (q: any) => setQueue(q))
 
     return () => {
-      socket.emit('leave_room')
-      ;(['user_joined','user_left','play','pause','seek','change_video','chat_message','typing','sync_state','host_changed','queue_updated'] as any[]).forEach((e) => socket.off(e))
+      if (socket.connected) socket.emit('leave_room')
+      for (const timer of typingExpiryTimers.current.values()) clearTimeout(timer)
+      typingExpiryTimers.current.clear()
+      ;(['user_joined','user_left','presence_updated','play','pause','seek','change_video','chat_message','message_reactions','typing','sync_state','host_changed','queue_updated'] as any[]).forEach((e) => socket.off(e))
     }
-  }, [socket, connected, slug, session, sendCineSrcCommand])
+  }, [socket, connected, slug, session?.user.id, session?.user.serverToken, session?.user.accessToken, sendCineSrcCommand])
 
   useEffect(() => {
-    if (!session) return
+    if (!session || !connected) return
     const headers = { Authorization: `Bearer ${session.user.serverToken}` }
     axios.get(`${SERVER}/api/rooms/${slug}`, { headers })
-      .then(({ data }) => setParticipants(data.participants ?? []))
-      .catch(() => router.push('/'))
+      .catch((error) => {
+        if (error?.response?.status === 404) {
+          if (session?.user.id && window.localStorage.getItem(`wto3:lastRoom:${session.user.id}`) === slug) {
+            window.localStorage.removeItem(`wto3:lastRoom:${session.user.id}`)
+          }
+          router.push('/')
+        } else {
+          setRoomLoadError('تعذر الاتصال مؤقتاً. سنحاول إعادة ربط الغرفة تلقائياً.')
+        }
+      })
     axios.get(`${SERVER}/api/rooms/${slug}/messages`, { headers })
-      .then(({ data }) => setMessages(data))
-  }, [slug, session, router])
+      .then(({ data }) => setMessages((prev) => {
+        const byId = new Map<string, ChatMessage>()
+        for (const message of [...data, ...prev]) byId.set(message.id, message)
+        return [...byId.values()].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      }))
+      .catch(() => {})
+  }, [slug, session?.user.serverToken, connected, router])
 
   // Scroll only the message panes; scrollIntoView also moves the mobile page.
   useEffect(() => {
@@ -756,8 +800,9 @@ export default function RoomPage() {
     e.preventDefault()
     if (!chatInput.trim() || !socket) return
     if (chatBlurTimer.current) clearTimeout(chatBlurTimer.current)
-    socket.emit('chat_message', { message: chatInput.trim() })
+    socket.emit('chat_message', { message: chatInput.trim(), replyToId: replyTo?.id })
     setChatInput('')
+    setReplyTo(null)
     socket.emit('typing', { userId: session?.user.id ?? '', userName: session?.user.name ?? '', isTyping: false })
     if (window.matchMedia('(max-width: 767px)').matches) {
       mobileChatInputRef.current?.blur()
@@ -765,6 +810,19 @@ export default function RoomPage() {
       if (chatBlurTimer.current) clearTimeout(chatBlurTimer.current)
       chatBlurTimer.current = setTimeout(() => setIsChatFocused(false), 400)
     }
+  }
+
+  function startReply(message: ChatMessage) {
+    setReplyTo(message)
+    setSidebarTab('chat')
+    requestAnimationFrame(() => {
+      if (window.matchMedia('(max-width: 767px)').matches) mobileChatInputRef.current?.focus()
+      else desktopChatInputRef.current?.focus()
+    })
+  }
+
+  function toggleReaction(messageId: string, emoji: string) {
+    socket?.emit('message_reaction', { messageId, emoji })
   }
 
   function handleMobileChatFocus() {
@@ -813,9 +871,9 @@ export default function RoomPage() {
   const stableYoutubeUrl = useMemo(() => {
     if (!room?.currentVideo || room.currentSource !== 'youtube') return ''
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    return `https://www.youtube.com/embed/${room.currentVideo}?enablejsapi=1&origin=${encodeURIComponent(origin)}&autoplay=1&mute=1&playsinline=1&controls=1&rel=0`
+    return `https://www.youtube.com/embed/${room.currentVideo}?enablejsapi=1&origin=${encodeURIComponent(origin)}&autoplay=1&mute=1&playsinline=1&controls=${room.isHost ? 1 : 0}&rel=0`
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [room?.currentVideo, room?.currentSource])
+  }, [room?.currentVideo, room?.currentSource, room?.isHost])
 
   // Keep the room at its normal height; only lift the composer above the keyboard.
   useEffect(() => {
@@ -882,7 +940,7 @@ export default function RoomPage() {
             backdropFilter: 'blur(12px)',
           }}>
           <div className="flex items-center gap-2.5">
-            <button onClick={() => router.push('/')} className="btn-ghost p-2 -ml-2" title="Leave Room">
+            <button onClick={() => { if (session?.user.id) window.localStorage.removeItem(`wto3:lastRoom:${session.user.id}`); router.push('/') }} className="btn-ghost p-2 -ml-2" title="مغادرة الغرفة">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
@@ -938,6 +996,7 @@ export default function RoomPage() {
             )}
           </div>
         </header>
+        {roomLoadError && <div role="status" className="px-4 py-2 text-xs text-center" style={{ background: '#523b25', color: '#f9d9ae' }}>{roomLoadError}</div>}
 
         {/* Video area — mobile: 40dvh fixed; desktop: flex-1 */}
         <div ref={videoContainerRef}
@@ -963,6 +1022,7 @@ export default function RoomPage() {
             <iframe ref={playerRef}
               src={stableYoutubeUrl}
               className="w-full h-full"
+              style={{ pointerEvents: room.isHost ? 'auto' : 'none' }}
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
               title="YouTube video player"
@@ -980,7 +1040,8 @@ export default function RoomPage() {
           {room?.currentVideo && room.currentSource === 'drive' && (
             <video key={room.currentVideo} ref={videoRef}
               src={`${SERVER}/api/rooms/${slug}/stream`}
-              controls className="w-full h-full"
+              controls={room.isHost} className="w-full h-full"
+              style={{ pointerEvents: room.isHost ? 'auto' : 'none' }}
               playsInline
               onPlay={handlePlay} onPause={handlePause} onSeeked={handleSeeked} />
            )}
@@ -990,11 +1051,18 @@ export default function RoomPage() {
               ref={cineSrcRef}
               src={cineSrcUrl(room.currentVideo)!}
               className="w-full h-full"
+              style={{ pointerEvents: room.isHost ? 'auto' : 'none' }}
               title="CineSrc player"
               sandbox="allow-scripts allow-same-origin allow-presentation"
               allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
               allowFullScreen
             />
+          )}
+          {room?.currentVideo && !room.isHost && (
+            <div className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-lg text-xs"
+              style={{ background: 'rgba(14,18,24,.78)', color: C.textFaded, pointerEvents: 'none' }}>
+              التحكم بالمشغل للمضيف
+            </div>
           )}
           {playerError && room?.currentSource === 'movie' && (
             <div role="alert" className="absolute top-3 left-3 right-3 z-20 p-2 text-sm text-center"
@@ -1100,40 +1168,13 @@ export default function RoomPage() {
                     <p className="text-xs" style={{ color: C.textFaint, fontFamily: 'var(--font-mono)' }}>ابدأوا المحادثة برسالة 👋</p>
                   </div>
                 )}
-                {messages.map((msg) => {
-                  const isSystem = msg.userId === 'system'
-                  if (isSystem) {
-                    return (
-                      <div key={msg.id} className="flex justify-center py-1">
-                        <span className="text-[10px] px-2 py-0.5"
-                          style={{ color: C.textFaded, fontFamily: 'var(--font-mono)', background: C.lightGray, border: '1.5px solid ' + C.textSubtle }}>
-                          {msg.message}
-                        </span>
-                      </div>
-                    )
-                  }
-                  const isOwn = msg.userId === session?.user.id
-                  return (
-                    <div key={msg.id} className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-                      <div className="w-6 h-6 avatar text-[10px] self-end flex-shrink-0">{msg.userName?.[0]?.toUpperCase()}</div>
-                      <div className={`max-w-[80%] space-y-0.5 flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                        <span className="text-xs px-1" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)', textAlign: isOwn ? 'right' : 'left' }}>
-                          {isOwn ? 'أنت' : msg.userName}
-                        </span>
-                        <div className="px-3 py-2 text-sm leading-relaxed"
-                          style={isOwn
-                            ? { background: C.gold, color: C.ink, border: '1px solid ' + C.border, borderRadius: 10, fontFamily: 'var(--font-mono)' }
-                            : { background: C.offWhite, color: C.dark, border: '1px solid ' + C.border, borderRadius: 10, fontFamily: 'var(--font-mono)' }
-                          }>
-                          {msg.message}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+                {messages.map((msg) => (
+                  <ChatMessageItem key={msg.id} message={msg} currentUserId={session?.user.id ?? ''}
+                    onReply={startReply} onReaction={toggleReaction} />
+                ))}
                 {typingUsers.length > 0 && (
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 avatar text-[10px] flex-shrink-0" style={{ opacity: 0.5 }}>{typingUsers[0]?.[0]?.toUpperCase()}</div>
+                    <div className="w-6 h-6 avatar text-[10px] flex-shrink-0" style={{ opacity: 0.5 }}>{typingUsers[0]?.userName?.[0]?.toUpperCase()}</div>
                     <div className="px-3 py-2" style={{ background: C.offWhite, border: '2px solid ' + C.border }}>
                       <div className="flex gap-1 items-center h-4">
                         {[0, 150, 300].map((delay) => (
@@ -1146,6 +1187,7 @@ export default function RoomPage() {
                 )}
               </div>
               <div id="chat-input-bar" className="p-3 flex-shrink-0 chat-input-area chat-input-bar" style={{ borderTop: '2px solid ' + C.border }}>
+                {replyTo && <div className="chat-reply-composer"><div><strong>رد على {replyTo.userName}</strong><span>{replyTo.message}</span></div><button type="button" onClick={() => setReplyTo(null)} aria-label="إلغاء الرد">×</button></div>}
                 <form onSubmit={sendMessage} className="flex gap-2">
                   <input 
                     id="chat-input-mobile" 
@@ -1159,7 +1201,7 @@ export default function RoomPage() {
                     className="input-field flex-1 min-w-0 py-2"
                   />
                   <button id="send-message-btn-mobile" type="submit" disabled={!chatInput.trim()}
-                    aria-label="Send message"
+                    aria-label="إرسال الرسالة"
                     className="w-11 h-11 flex items-center justify-center transition-all duration-100 flex-shrink-0 disabled:opacity-35"
                     style={{ background: C.gold, border: '1px solid ' + C.border }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth="2.5">
@@ -1251,40 +1293,13 @@ export default function RoomPage() {
                   <p className="text-xs" style={{ color: C.textFaint, fontFamily: 'var(--font-mono)' }}>ابدأوا المحادثة برسالة 👋</p>
                 </div>
               )}
-              {messages.map((msg) => {
-                const isSystem = msg.userId === 'system'
-                if (isSystem) {
-                  return (
-                    <div key={msg.id} className="flex justify-center py-1">
-                      <span className="text-[10px] px-2 py-0.5"
-                        style={{ color: C.textFaded, fontFamily: 'var(--font-mono)', background: C.lightGray, border: '1.5px solid ' + C.textSubtle }}>
-                        {msg.message}
-                      </span>
-                    </div>
-                  )
-                }
-                const isOwn = msg.userId === session?.user.id
-                return (
-                  <div key={msg.id} className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className="w-6 h-6 avatar text-[10px] self-end flex-shrink-0">{msg.userName?.[0]?.toUpperCase()}</div>
-                    <div className={`max-w-[80%] space-y-0.5 flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-                      <span className="text-xs px-1" style={{ color: C.textFaded, fontFamily: 'var(--font-mono)', textAlign: isOwn ? 'right' : 'left' }}>
-                        {isOwn ? 'أنت' : msg.userName}
-                      </span>
-                      <div className="px-3 py-2 text-sm leading-relaxed"
-                        style={isOwn
-                          ? { background: C.gold, color: C.ink, border: '1px solid ' + C.border, borderRadius: 10, fontFamily: 'var(--font-mono)' }
-                          : { background: C.offWhite, color: C.dark, border: '1px solid ' + C.border, borderRadius: 10, fontFamily: 'var(--font-mono)' }
-                        }>
-                        {msg.message}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+              {messages.map((msg) => (
+                <ChatMessageItem key={msg.id} message={msg} currentUserId={session?.user.id ?? ''}
+                  onReply={startReply} onReaction={toggleReaction} />
+              ))}
               {typingUsers.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 avatar text-[10px] flex-shrink-0" style={{ opacity: 0.5 }}>{typingUsers[0]?.[0]?.toUpperCase()}</div>
+                  <div className="w-6 h-6 avatar text-[10px] flex-shrink-0" style={{ opacity: 0.5 }}>{typingUsers[0]?.userName?.[0]?.toUpperCase()}</div>
                   <div className="px-3 py-2" style={{ background: C.offWhite, border: '2px solid ' + C.border }}>
                     <div className="flex gap-1 items-center h-4">
                       {[0, 150, 300].map((delay) => (
@@ -1297,9 +1312,11 @@ export default function RoomPage() {
               )}
             </div>
             <div id="chat-input-bar" className="p-3 flex-shrink-0 chat-input-bar" style={{ borderTop: '2px solid ' + C.border }}>
+              {replyTo && <div className="chat-reply-composer"><div><strong>رد على {replyTo.userName}</strong><span>{replyTo.message}</span></div><button type="button" onClick={() => setReplyTo(null)} aria-label="إلغاء الرد">×</button></div>}
               <form onSubmit={sendMessage} className="flex gap-2">
                 <input 
                   id="chat-input" 
+                  ref={desktopChatInputRef}
                   value={chatInput} 
                   onChange={(e) => onTyping(e.target.value)}
                   onFocus={() => setIsChatFocused(true)}
@@ -1307,7 +1324,7 @@ export default function RoomPage() {
                   placeholder="اكتب رسالة..."
                   className="input-field flex-1 py-2" 
                 />
-                <button id="send-message-btn" type="submit" disabled={!chatInput.trim()}
+                <button id="send-message-btn" type="submit" disabled={!chatInput.trim()} aria-label="إرسال الرسالة"
                   className="w-9 h-9 flex items-center justify-center transition-all duration-100 flex-shrink-0 disabled:opacity-35"
                   style={{ background: C.gold, border: '1px solid ' + C.border }}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.ink} strokeWidth="2.5">
