@@ -1187,10 +1187,11 @@ export default function RoomPage() {
                 touchAction: 'manipulation',
               }}
               onClick={() => {
-                // Real user gesture → browser now allows postMessage-triggered autoplay
                 const state = roomRef.current
-                if (state?.currentTime) sendCineSrcCommand('seek', [state.currentTime])
-                if (state?.isPlaying) sendCineSrcCommand('play')
+                sendCineSrcCommand('play')
+                if (state?.currentTime) {
+                  sendCineSrcCommand('seek', [state.currentTime])
+                }
                 setViewerUnlocked(true)
               }}
             >
@@ -1294,11 +1295,30 @@ export default function RoomPage() {
 
          {/* Non-host: add to queue */}
          {!room?.isHost && room !== null && (
-           <div className="host-controls flex-shrink-0 px-3 pb-3 pt-2"
+           <div className="host-controls flex-shrink-0 px-3 pb-3 pt-2 flex flex-col gap-2"
              style={{ background: C.bgGlass, borderTop: '2px solid ' + C.border, backdropFilter: 'blur(12px)' }}>
+             {room.currentSource === 'movie' && (
+               <button
+                 type="button"
+                 onClick={() => {
+                   const state = roomRef.current
+                   sendCineSrcCommand('play')
+                   if (state?.currentTime) {
+                     sendCineSrcCommand('seek', [state.currentTime])
+                   }
+                   setViewerUnlocked(true)
+                 }}
+                 className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold tracking-wide transition-all duration-100"
+                 style={{ background: C.teal, border: '1px solid ' + C.border, color: C.ink, fontFamily: 'var(--font-mono)' }}>
+                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                   <polygon points="5 3 19 12 5 21 5 3"/>
+                 </svg>
+                 ▶ تشغيل الفيلم ومزامنته
+               </button>
+             )}
              <button onClick={() => setShowYouTubeModal(true)}
                className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold tracking-wide transition-all duration-100"
-               style={{ background: C.gold, border: '1px solid ' + C.border, color: C.ink, fontFamily: 'var(--font-mono)' }}>
+               style={{ background: room.currentSource === 'movie' ? C.offWhite : C.gold, border: '1px solid ' + C.border, color: room.currentSource === 'movie' ? C.dark : C.ink, fontFamily: 'var(--font-mono)' }}>
                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                أضف مقطع للطابور
              </button>
