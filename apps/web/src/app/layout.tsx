@@ -3,7 +3,7 @@ import './globals.css'
 import { Providers } from '@/components/providers'
 
 export const metadata: Metadata = {
-  title: 'WTO3 — المشاهدة أحلى سوا',
+  title: 'WTO3 — غرف مشاهدة الأفلام والمسلسلات',
   description: 'افتح غرفة وشاهد الأفلام والمسلسلات مع أصحابك بشات مباشر وتشغيل متزامن.',
 }
 

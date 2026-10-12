@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowUpLeft, Film, Link2, LogOut, MessageCircle, Play, Plus,
 
 const FEATURES = [
   { icon: Film, title: 'كل ما تحب تتابعه', text: 'أفلام ومسلسلات ومقاطع يوتيوب في مكان واحد.' },
-  { icon: Users, title: 'غرفة تجمعكم', text: 'شارك الرابط مع أصحابك وابدأوا المشاهدة سوا.' },
+  { icon: Users, title: 'غرفة تجمعكم', text: 'شارك رابط الغرفة مع أصحابك وابدأوا التشغيل.' },
   { icon: MessageCircle, title: 'تعليق لحظة بلحظة', text: 'شات مباشر يبقى قريب منك طول السهرة.' },
 ]
 
@@ -50,7 +50,6 @@ export default function HomePage() {
           <div className="site-brand">
             <span className="site-brand-icon"><Play size={18} fill="currentColor" strokeWidth={1.5} /></span>
             <span>WTO3<span className="site-brand-dot">.</span></span>
-            <span className="site-brand-caption">WATCH TOGETHER</span>
           </div>
           <div className="site-nav-actions">
             {session ? <>
@@ -63,7 +62,7 @@ export default function HomePage() {
         <section className="home-hero">
           <div className="hero-copy">
             <div className="hero-eyebrow"><span className="eyebrow-line" /> مكانكم، فيلمكم، وسهرتكم</div>
-            <h1>المشاهدة أحلى<br /><span>لما تكون سوا.</span></h1>
+            <h1>غرف الأفلام<br /><span>والمسلسلات.</span></h1>
             <p className="hero-description">افتح غرفة، اختر اللي تبي تتابعه، وخل أصحابك يدخلون معك. تشغيل متزامن وشات مباشر يخلي كل لحظة مشتركة.</p>
             {session ? <div className="hero-actions">
               <button id="create-room-btn" className="action-primary" onClick={createRoom} disabled={loading}><Plus size={19} strokeWidth={2.4} /> {loading ? 'جاري إنشاء الغرفة...' : 'أنشئ غرفة جديدة'} <ArrowLeft size={19} className="action-arrow" /></button>
