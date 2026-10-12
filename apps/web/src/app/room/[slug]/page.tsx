@@ -404,10 +404,9 @@ export default function RoomPage() {
   const [isChatFocused, setIsChatFocused] = useState(false)
   const [videoHeightPx, setVideoHeightPx] = useState<number | null>(null)
   const [isVideoExpanded, setIsVideoExpanded] = useState(false)
-  // Viewer-only: browser blocks autoplay until user interacts with the page.
-  // We show a one-time overlay so they can unlock playback with a single tap.
-  const [viewerNeedsUnlock, setViewerNeedsUnlock] = useState(false)
-  const pendingCineSrcActionsRef = useRef<Array<{ cmd: 'play' | 'pause' | 'seek'; args: number[] }>>([])
+  // Viewer-only: show a tap-to-watch overlay to satisfy browser autoplay policy.
+  // Reset to false whenever the video changes so the overlay reappears for each new movie.
+  const [viewerUnlocked, setViewerUnlocked] = useState(false)
 
 
   const playerRef = useRef<HTMLIFrameElement>(null)
@@ -499,24 +498,10 @@ export default function RoomPage() {
       if (data.type === 'cinesrc:ready') {
         setPlayerError('')
         const state = roomRef.current
-        const isHost = state?.isHost ?? false
-
-        if (isHost) {
-          // Host controls playback directly
-          if (state?.currentTime) sendCineSrcCommand('seek', [state.currentTime])
-          if (state?.isPlaying) sendCineSrcCommand('play')
-        } else {
-          // Viewer: browser blocks autoplay without a user gesture on the iframe.
-          // Queue the pending commands and show the unlock overlay.
-          pendingCineSrcActionsRef.current = []
-          if (state?.currentTime) {
-            pendingCineSrcActionsRef.current.push({ cmd: 'seek', args: [state.currentTime] })
-          }
-          if (state?.isPlaying) {
-            pendingCineSrcActionsRef.current.push({ cmd: 'play', args: [] })
-          }
-          // Always show the overlay so the viewer can unlock playback.
-          setViewerNeedsUnlock(true)
+        // Only the host sends play/seek here — viewer must tap the overlay first
+        if (state?.isHost) {
+          if (state.currentTime) sendCineSrcCommand('seek', [state.currentTime])
+          if (state.isPlaying) sendCineSrcCommand('play')
         }
       }
       if (typeof data.currentTime === 'number' && Number.isFinite(data.currentTime)) {
@@ -680,8 +665,7 @@ export default function RoomPage() {
       youtubeDurationRef.current = 0
       youtubeEndedLocallyRef.current = false
       lastPlayerState.current = -1
-      pendingCineSrcActionsRef.current = []
-      setViewerNeedsUnlock(false)
+      setViewerUnlocked(false)  // reset overlay for new movie
       setRoom((r) => r ? { ...r, currentVideo: p.videoId, currentSource: p.source as VideoSource, currentTime: 0, isPlaying: p.source !== 'movie' } : r)
     })
     socket.on('chat_message', (msg) => setMessages((prev) => prev.some((item) => item.id === msg.id) ? prev : [...prev, msg]))
@@ -1185,34 +1169,38 @@ export default function RoomPage() {
               allowFullScreen
             />
           )}
-          {/* Viewer unlock overlay — shown once so browser autoplay policy is satisfied */}
-          {room?.currentVideo && room.currentSource === 'movie' && !room.isHost && viewerNeedsUnlock && (
+          {/* Viewer unlock overlay — appears immediately for non-hosts, one tap starts synced playback */}
+          {room?.currentVideo && room.currentSource === 'movie' && !room.isHost && !viewerUnlocked && (
             <button
               type="button"
-              className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 w-full h-full"
-              style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(3px)', cursor: 'pointer', border: 'none' }}
+              className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 w-full h-full"
+              style={{ background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(4px)', cursor: 'pointer', border: 'none' }}
               onClick={() => {
-                // Execute queued commands now that we have a real user gesture
-                for (const action of pendingCineSrcActionsRef.current) {
-                  sendCineSrcCommand(action.cmd, action.args)
-                }
-                pendingCineSrcActionsRef.current = []
-                setViewerNeedsUnlock(false)
+                // Real user gesture → browser allows autoplay in the iframe
+                const state = roomRef.current
+                if (state?.currentTime) sendCineSrcCommand('seek', [state.currentTime])
+                if (state?.isPlaying) sendCineSrcCommand('play')
+                setViewerUnlocked(true)
               }}
             >
               <div style={{
-                width: 72, height: 72, borderRadius: '50%',
+                width: 76, height: 76, borderRadius: '50%',
                 background: C.gold, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 0 32px rgba(233,183,125,0.55)',
+                boxShadow: '0 0 40px rgba(233,183,125,0.6)',
               }}>
-                <svg width="30" height="30" viewBox="0 0 24 24" fill={C.ink}><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill={C.ink}><polygon points="5 3 19 12 5 21 5 3"/></svg>
               </div>
-              <span style={{ color: C.dark, fontFamily: 'var(--font-mono)', fontSize: 14, fontWeight: 600 }}>
-                انقر للمشاهدة
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <span style={{ color: C.dark, fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700 }}>
+                  انقر للمشاهدة
+                </span>
+                <span style={{ color: C.textFaded, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                  اضغط مرة واحدة فقط لتشغيل الفيلم
+                </span>
+              </div>
             </button>
           )}
-          {room?.currentVideo && !room.isHost && !viewerNeedsUnlock && (
+          {room?.currentVideo && !room.isHost && viewerUnlocked && (
             <div className="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-lg text-xs"
               style={{ background: 'rgba(14,18,24,.78)', color: C.textFaded, pointerEvents: 'none' }}>
               التحكم بالمشغل للمضيف
