@@ -1,10 +1,13 @@
 'use client'
-import { getProviders, signIn } from 'next-auth/react'
+import { getProviders, signIn, useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:4000'
 
 export default function LoginPage() {
+  const router = useRouter()
+  const { status } = useSession()
   const [isRegistering, setIsRegistering] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -16,6 +19,10 @@ export default function LoginPage() {
   useEffect(() => {
     getProviders().then((providers) => setGoogleAvailable(Boolean(providers?.google))).catch(() => setGoogleAvailable(false))
   }, [])
+
+  useEffect(() => {
+    if (status === 'authenticated') router.replace('/')
+  }, [router, status])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,6 +65,10 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (status !== 'unauthenticated') {
+    return <main className="min-h-screen flex items-center justify-center">جاري التحقق من تسجيل الدخول...</main>
   }
 
   return (
@@ -126,7 +137,7 @@ export default function LoginPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} autoComplete="on" className="space-y-4">
             {error && (
               <div
                 className="p-3 text-sm"
@@ -148,6 +159,8 @@ export default function LoginPage() {
                 </label>
                 <input
                   type="text"
+                  name="name"
+                  autoComplete="name"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -163,6 +176,8 @@ export default function LoginPage() {
               </label>
               <input
                 type="email"
+                name="email"
+                autoComplete="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -177,6 +192,8 @@ export default function LoginPage() {
               </label>
               <input
                 type="password"
+                name="password"
+                autoComplete={isRegistering ? 'new-password' : 'current-password'}
                 required
                 minLength={isRegistering ? 8 : undefined}
                 value={password}

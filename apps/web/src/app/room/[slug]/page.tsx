@@ -827,6 +827,7 @@ export default function RoomPage() {
         ? Math.max(0, window.innerHeight - (visibleHeight + (vv?.offsetTop ?? 0)))
         : 0
       document.documentElement.style.setProperty('--app-height', `${Math.round(roomHeight)}px`)
+      document.documentElement.style.setProperty('--app-top', `${Math.round(keyboardOpen ? vv?.offsetTop ?? 0 : 0)}px`)
       document.documentElement.style.setProperty('--keyboard-offset', `${Math.round(keyboardOffset)}px`)
       if (document.activeElement === mobileChatInputRef.current) {
         const pane = mobileChatScrollRef.current
@@ -843,6 +844,7 @@ export default function RoomPage() {
         vv.removeEventListener('resize', setAppHeight)
         vv.removeEventListener('scroll', setAppHeight)
         document.documentElement.style.removeProperty('--app-height')
+        document.documentElement.style.removeProperty('--app-top')
         document.documentElement.style.removeProperty('--keyboard-offset')
       }
     } else {
@@ -850,6 +852,7 @@ export default function RoomPage() {
       return () => {
         window.removeEventListener('resize', setAppHeight)
         document.documentElement.style.removeProperty('--app-height')
+        document.documentElement.style.removeProperty('--app-top')
         document.documentElement.style.removeProperty('--keyboard-offset')
       }
     }
